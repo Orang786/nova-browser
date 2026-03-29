@@ -429,3 +429,103 @@
   background: var(--accent-hover);
   transform: scale(1.05);
 }
+
+/* ============================================
+   EXTENSIONS
+   ============================================ */
+
+.ext-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ext-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: var(--transition-fast);
+}
+
+.ext-action-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ext-icon {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.toggle-switch-sm {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggle-switch-sm input { opacity: 0; width: 0; height: 0; }
+
+.toggle-slider-sm {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border-color);
+  border-radius: 999px;
+  transition: var(--transition);
+}
+
+.toggle-slider-sm::before {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  left: 2px; bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.toggle-switch-sm input:checked + .toggle-slider-sm { background: var(--accent); }
+.toggle-switch-sm input:checked + .toggle-slider-sm::before { transform: translateX(16px); }
+
+.ext-popular-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ext-popular-item {
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  transition: var(--transition-fast);
+}
+
+.ext-popular-item:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}

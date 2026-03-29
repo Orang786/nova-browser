@@ -1,12 +1,11 @@
 {
-  "version": "1.0.0",
-  "releaseDate": "2024-01-01",
-  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.1.0/Nova-Browser-Setup-1.1.0.exe",
-  "releaseNotes": "Первый релиз Nova Browser!",
+  "version": "1.1.0",
+  "releaseDate": "2024-03-29",
+  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.1.1/Nova-Browser-Setup-1.1.1.exe",
+  "releaseNotes": "Добавлены расширения, исправлены ошибки",
   "changelog": [
-    "Система вкладок",
-    "AI Ассистент",
-    "Менеджер паролей",
-    "Блокировка рекламы"
+    "Система расширений",
+    "Загрузка из Chrome Web Store",
+    "Исправлены ошибки"
   ]
 }

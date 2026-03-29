@@ -12,6 +12,7 @@ let passwordsUI;
 let aiChat;
 let readingMode;
 let splitView;
+let extensionsUI;
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Инициализация менеджеров
@@ -27,7 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   splitView = new SplitView(tabManager);
 
   // Автообновление
-  let updaterUI = new UpdaterUI();
+  updaterUI = new UpdaterUI();
+  extensionsUI = new ExtensionsUI(tabManager);
 
   // Первая вкладка
   await tabManager.init();
@@ -180,6 +182,9 @@ function setupMenu() {
           if (res && res.saved) {
             Utils.showNotification('📸 Скриншот сохранён', 2000, 'success');
           }
+          break;
+        case 'extensions':
+          extensionsUI.showInSidebar();
           break;
       }
     });
@@ -455,6 +460,7 @@ function setupCommandPalette() {
     { icon: '⚙️', title: 'Настройки', action: async () => { const p = await window.electronAPI.getSettingsPath(); tabManager.createTab(p, 'Настройки'); }},
     { icon: '🗑️', title: 'Очистить историю', action: () => clearBrowsingData() },
     { icon: 'ℹ️', title: 'О браузере', action: () => Utils.showNotification('Nova Browser v1.0.0 🚀', 3000, 'info') },
+    { icon: '🧩', title: 'Расширения', action: () => extensionsUI.showInSidebar() },
   ];
 
   function show() {

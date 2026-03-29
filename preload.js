@@ -72,4 +72,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onDownloadProgress: (cb) => ipcRenderer.on('download-progress', (e, d) => cb(d)),
   onDownloadComplete: (cb) => ipcRenderer.on('download-complete', (e, d) => cb(d)),
   onOpenUrlInNewTab: (cb) => ipcRenderer.on('open-url-in-new-tab', (e, url) => cb(url)),
+
+    // Расширения
+  extensionsGetAll: () => ipcRenderer.invoke('extensions-get-all'),
+  extensionsLoadFolder: () => ipcRenderer.invoke('extensions-load-folder'),
+  extensionsLoadCRX: () => ipcRenderer.invoke('extensions-load-crx'),
+  extensionsInstallFromStore: (id) => ipcRenderer.invoke('extensions-install-from-store', id),
+  extensionsRemove: (id) => ipcRenderer.invoke('extensions-remove', id),
+  extensionsToggle: (id, enabled) => ipcRenderer.invoke('extensions-toggle', id, enabled),
+  onExtensionDownloadProgress: (cb) => ipcRenderer.on('extension-download-progress', (e, p) => cb(p)),
 });

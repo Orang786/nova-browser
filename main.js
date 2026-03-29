@@ -284,6 +284,7 @@ function createWindow() {
   historyStore = new DataStore('history.json');
   downloadsStore = new DataStore('downloads.json');
   passwordManager = new PasswordManager();
+  extensionManager = new ExtensionManager();
   updater = new SimpleUpdater(UPDATE_URL);
 
   const bounds = settingsStore.get('windowBounds', { width: 1400, height: 900 });
@@ -671,13 +672,332 @@ ipcMain.on('update-install', (event, installerPath) => {
 ipcMain.handle('get-app-version', () => app.getVersion());
 
 // ============================================
+// СИСТЕМА РАСШИРЕНИЙ
+// ============================================
+
+class ExtensionManager {
+  constructor() {
+    this.store = new DataStore('extensions.json');
+    this.loadedExtensions = [];
+  }
+
+  getAll() {
+    return this.store.get('items', []);
+  }
+
+  // Загрузить расширение из папки
+  async loadFromFolder(extensionPath) {
+    try {
+      const manifestPath = path.join(extensionPath, 'manifest.json');
+
+      if (!fs.existsSync(manifestPath)) {
+        return { success: false, error: 'manifest.json не найден в папке' };
+      }
+
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+
+      // Загружаем расширение в Electron
+      const ext = await session.defaultSession.loadExtension(extensionPath, {
+        allowFileAccess: true
+      });
+
+      // Сохраняем информацию
+      const extInfo = {
+        id: ext.id,
+        name: manifest.name || 'Unknown',
+        version: manifest.version || '1.0',
+        description: manifest.description || '',
+        path: extensionPath,
+        enabled: true,
+        installedAt: new Date().toISOString(),
+        manifest_version: manifest.manifest_version || 2,
+        icons: manifest.icons || {},
+        type: 'unpacked'
+      };
+
+      const extensions = this.store.get('items', []);
+      // Удалить старую версию если есть
+      const filtered = extensions.filter(e => e.id !== ext.id);
+      filtered.push(extInfo);
+      this.store.set('items', filtered);
+      this.loadedExtensions.push(ext);
+
+      console.log('✅ Расширение загружено:', manifest.name);
+      return { success: true, extension: extInfo };
+
+    } catch (e) {
+      console.error('❌ Ошибка загрузки расширения:', e.message);
+      return { success: false, error: e.message };
+    }
+  }
+
+  // Загрузить .crx файл
+  async loadFromCRX(crxPath) {
+    try {
+      const AdmZip = require('adm-zip') || null;
+
+      // CRX по сути ZIP с заголовком
+      // Распаковываем во временную папку
+      const extDir = path.join(app.getPath('userData'), 'extensions', 
+        'crx_' + Date.now());
+
+      if (!fs.existsSync(extDir)) {
+        fs.mkdirSync(extDir, { recursive: true });
+      }
+
+      // Читаем CRX
+      const crxBuffer = fs.readFileSync(crxPath);
+
+      // CRX формат: magic(4) + version(4) + header_length + header + ZIP
+      // Находим начало ZIP (PK signature)
+      let zipStart = 0;
+      for (let i = 0; i < Math.min(crxBuffer.length, 1000); i++) {
+        if (crxBuffer[i] === 0x50 && crxBuffer[i + 1] === 0x4B &&
+            crxBuffer[i + 2] === 0x03 && crxBuffer[i + 3] === 0x04) {
+          zipStart = i;
+          break;
+        }
+      }
+
+      const zipBuffer = crxBuffer.slice(zipStart);
+
+      // Распаковываем
+      const zipPath = path.join(extDir, 'extension.zip');
+      fs.writeFileSync(zipPath, zipBuffer);
+
+      // Используем встроенную распаковку
+      await this.unzip(zipPath, extDir);
+
+      // Удаляем zip
+      fs.unlinkSync(zipPath);
+
+      // Загружаем как папку
+      return await this.loadFromFolder(extDir);
+
+    } catch (e) {
+      return { success: false, error: 'Ошибка CRX: ' + e.message };
+    }
+  }
+
+  // Простая распаковка ZIP
+  unzip(zipPath, destDir) {
+    return new Promise((resolve, reject) => {
+      const { execFile } = require('child_process');
+
+      // Используем PowerShell для распаковки
+      const ps = `Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force`;
+
+      execFile('powershell', ['-Command', ps], (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  }
+
+  // Скачать расширение из Chrome Web Store
+  async downloadFromStore(extensionId) {
+    return new Promise((resolve, reject) => {
+      const downloadUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0.0.0&acceptformat=crx2,crx3&x=id%3D${extensionId}%26uc`;
+
+      const savePath = path.join(app.getPath('userData'), 'extensions', 
+        `${extensionId}.crx`);
+      const saveDir = path.dirname(savePath);
+
+      if (!fs.existsSync(saveDir)) {
+        fs.mkdirSync(saveDir, { recursive: true });
+      }
+
+      const file = fs.createWriteStream(savePath);
+
+      const download = (url) => {
+        const client = url.startsWith('https') ? https : http;
+        client.get(url, (res) => {
+          // Редирект
+          if (res.statusCode === 301 || res.statusCode === 302) {
+            download(res.headers.location);
+            return;
+          }
+
+          if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}`));
+            return;
+          }
+
+          const totalBytes = parseInt(res.headers['content-length'], 10) || 0;
+          let receivedBytes = 0;
+
+          res.on('data', (chunk) => {
+            receivedBytes += chunk.length;
+            file.write(chunk);
+
+            if (totalBytes > 0 && mainWindow) {
+              mainWindow.webContents.send('extension-download-progress', {
+                percent: (receivedBytes / totalBytes) * 100,
+                received: receivedBytes,
+                total: totalBytes
+              });
+            }
+          });
+
+          res.on('end', () => {
+            file.end();
+            resolve(savePath);
+          });
+
+        }).on('error', (e) => {
+          file.close();
+          reject(e);
+        });
+      };
+
+      download(downloadUrl);
+    });
+  }
+
+  // Установить из Chrome Web Store по ID
+  async installFromStore(extensionId) {
+    try {
+      // Скачиваем CRX
+      const crxPath = await this.downloadFromStore(extensionId);
+
+      // Устанавливаем
+      const result = await this.loadFromCRX(crxPath);
+
+      // Удаляем CRX
+      try { fs.unlinkSync(crxPath); } catch(e) {}
+
+      return result;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // Удалить расширение
+  async remove(extensionId) {
+    try {
+      await session.defaultSession.removeExtension(extensionId);
+
+      let extensions = this.store.get('items', []);
+      const ext = extensions.find(e => e.id === extensionId);
+
+      // Удалить папку если это CRX
+      if (ext?.type === 'crx' && ext?.path) {
+        try { fs.rmSync(ext.path, { recursive: true, force: true }); } catch(e) {}
+      }
+
+      extensions = extensions.filter(e => e.id !== extensionId);
+      this.store.set('items', extensions);
+
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // Включить/выключить
+  async toggle(extensionId, enabled) {
+    const extensions = this.store.get('items', []);
+    const ext = extensions.find(e => e.id === extensionId);
+    if (!ext) return { success: false };
+
+    if (enabled) {
+      await session.defaultSession.loadExtension(ext.path, { allowFileAccess: true });
+    } else {
+      await session.defaultSession.removeExtension(extensionId);
+    }
+
+    ext.enabled = enabled;
+    this.store.set('items', extensions);
+    return { success: true };
+  }
+
+  // Загрузить все сохранённые расширения при старте
+  async loadSaved() {
+    const extensions = this.store.get('items', []);
+    let loaded = 0;
+
+    for (const ext of extensions) {
+      if (ext.enabled && ext.path && fs.existsSync(ext.path)) {
+        try {
+          await session.defaultSession.loadExtension(ext.path, {
+            allowFileAccess: true
+          });
+          loaded++;
+        } catch (e) {
+          console.warn(`⚠️ Не удалось загрузить ${ext.name}:`, e.message);
+        }
+      }
+    }
+
+    console.log(`🧩 Загружено расширений: ${loaded}/${extensions.length}`);
+  }
+}
+
+let extensionManager;
+
+// ============================================
+// IPC — РАСШИРЕНИЯ
+// ============================================
+
+ipcMain.handle('extensions-get-all', () => {
+  return extensionManager.getAll();
+});
+
+ipcMain.handle('extensions-load-folder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Выберите папку расширения',
+    properties: ['openDirectory'],
+    buttonLabel: 'Загрузить расширение'
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, error: 'Отменено' };
+  }
+
+  return await extensionManager.loadFromFolder(result.filePaths[0]);
+});
+
+ipcMain.handle('extensions-load-crx', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Выберите .crx файл',
+    filters: [
+      { name: 'Chrome Extension', extensions: ['crx'] },
+      { name: 'All Files', extensions: ['*'] }
+    ],
+    properties: ['openFile'],
+    buttonLabel: 'Установить'
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, error: 'Отменено' };
+  }
+
+  return await extensionManager.loadFromCRX(result.filePaths[0]);
+});
+
+ipcMain.handle('extensions-install-from-store', async (event, extensionId) => {
+  return await extensionManager.installFromStore(extensionId);
+});
+
+ipcMain.handle('extensions-remove', async (event, extensionId) => {
+  return await extensionManager.remove(extensionId);
+});
+
+ipcMain.handle('extensions-toggle', async (event, extensionId, enabled) => {
+  return await extensionManager.toggle(extensionId, enabled);
+});
+
+// ============================================
 // ЗАПУСК
 // ============================================
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   setupAdBlocker();
   setupUpdateChecker();
+
+  // Загрузить сохранённые расширения
+  await extensionManager.loadSaved();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
