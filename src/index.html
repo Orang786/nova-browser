@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src * data:; connect-src *;">
+  <title>Nova Browser</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/tabs.css">
+  <link rel="stylesheet" href="styles/toolbar.css">
+  <link rel="stylesheet" href="styles/sidebar.css">
+</head>
+<body>
+
+  <div id="toast-container"></div>
+
+  <!-- ======== CONTEXT MENU ======== -->
+  <div id="context-menu" class="hidden">
+    <div class="ctx-item" data-action="ctx-back">
+      <span class="ctx-icon">←</span> Назад
+    </div>
+    <div class="ctx-item" data-action="ctx-forward">
+      <span class="ctx-icon">→</span> Вперёд
+    </div>
+    <div class="ctx-item" data-action="ctx-reload">
+      <span class="ctx-icon">↻</span> Обновить
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="ctx-screenshot">
+      <span class="ctx-icon">📸</span> Сделать скриншот
+    </div>
+    <div class="ctx-item" data-action="ctx-copy-url">
+      <span class="ctx-icon">📋</span> Копировать URL
+    </div>
+    <div class="ctx-item" data-action="ctx-bookmark">
+      <span class="ctx-icon">⭐</span> Добавить в закладки
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="ctx-view-source">
+      <span class="ctx-icon">📄</span> Исходный код страницы
+    </div>
+    <div class="ctx-item" data-action="ctx-devtools">
+      <span class="ctx-icon">🔧</span> Инструменты разработчика
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="ctx-incognito">
+      <span class="ctx-icon">🕶️</span> Открыть в инкогнито
+    </div>
+  </div>
+
+  <!-- ======== TITLE BAR (кастомная) ======== -->
+  <div id="titlebar">
+    <div id="titlebar-drag-region">
+      <div id="app-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#7c3aed" stroke-width="2"/>
+          <path d="M8 12l3 3 5-6" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span id="app-title">Nova Browser</span>
+    </div>
+    <div id="window-controls">
+      <button id="btn-minimize" class="window-control-btn" title="Свернуть">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <rect x="1" y="5.5" width="10" height="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <button id="btn-maximize" class="window-control-btn" title="Развернуть">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1"/>
+        </svg>
+      </button>
+      <button id="btn-close" class="window-control-btn close-btn" title="Закрыть">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======== TABS BAR ======== -->
+  <div id="tabs-bar">
+    <div id="tabs-container">
+      <!-- Вкладки будут добавляться динамически -->
+    </div>
+    <button id="btn-new-tab" class="tab-action-btn" title="Новая вкладка (Ctrl+T)">
+      <svg width="14" height="14" viewBox="0 0 14 14">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ======== TOOLBAR (навигация + URL) ======== -->
+  <div id="toolbar">
+    <div id="nav-buttons">
+      <button id="btn-back" class="nav-btn" title="Назад (Alt+←)" disabled>
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="btn-forward" class="nav-btn" title="Вперёд (Alt+→)" disabled>
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="btn-reload" class="nav-btn" title="Обновить (Ctrl+R)">
+        <svg width="16" height="16" viewBox="0 0 16 16" id="reload-icon">
+          <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M8 0.5l3 2-3 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="btn-home" class="nav-btn" title="Домой">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <path d="M2 8l6-6 6 6M4 7v6a1 1 0 0 0 1 1h2v-3h2v3h2a1 1 0 0 0 1-1V7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="url-bar-container">
+      <div id="security-indicator" class="security-unknown" title="Информация о безопасности">
+        <svg width="14" height="14" viewBox="0 0 14 14" id="security-icon">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M7 4v3M7 9v0.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <input type="text" id="url-input" placeholder="Поиск или введите URL..." autocomplete="off" spellcheck="false">
+      <button id="btn-bookmark" class="url-action-btn" title="Добавить в закладки (Ctrl+D)">
+        <svg width="16" height="16" viewBox="0 0 16 16" id="bookmark-icon">
+          <path d="M4 2h8a1 1 0 0 1 1 1v11l-5-3-5 3V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="toolbar-actions">
+      <button id="btn-downloads" class="action-btn" title="Загрузки">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="download-badge" class="badge hidden">0</span>
+      </button>
+      <button id="btn-bookmarks-panel" class="action-btn" title="Закладки">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <path d="M4 2h8a1 1 0 0 1 1 1v11l-5-3-5 3V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        </svg>
+      </button>
+      <button id="btn-history" class="action-btn" title="История (Ctrl+H)">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="btn-sidebar-toggle" class="action-btn" title="Боковая панель">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M11 2v12" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </button>
+      <button id="btn-menu" class="action-btn" title="Меню">
+        <svg width="16" height="16" viewBox="0 0 16 16">
+          <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+          <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+          <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======== BOOKMARKS BAR ======== -->
+  <div id="bookmarks-bar" class="hidden">
+    <div id="bookmarks-bar-items">
+      <!-- Закладки будут добавляться динамически -->
+    </div>
+  </div>
+
+  <!-- ======== MAIN CONTENT AREA ======== -->
+  <div id="main-content">
+    <!-- VERTICAL TABS -->
+    <div id="vertical-tabs-panel">
+      <div id="vertical-tabs-header">
+        <h3>Вкладки</h3>
+        <button class="nav-btn" id="vtab-toggle-mode" title="Горизонтальные вкладки" style="width:28px;height:28px;">
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M1 5h12" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <div id="vertical-tabs-list">
+        <!-- Вертикальные вкладки -->
+      </div>
+      <div id="vertical-tabs-footer">
+        <button id="vtab-new-btn">＋ Новая вкладка</button>
+      </div>
+    </div>
+    <div id="vertical-tabs-resize"></div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebar" class="hidden">
+      <div id="sidebar-header">
+        <h3 id="sidebar-title">Закладки</h3>
+        <button id="btn-sidebar-close" class="sidebar-close-btn">
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div id="sidebar-search">
+        <input type="text" id="sidebar-search-input" placeholder="Поиск...">
+      </div>
+      <div id="sidebar-content">
+        <!-- Контент сайдбара -->
+      </div>
+    </div>
+
+    <!-- WEBVIEW CONTAINER -->
+    <div id="webview-container">
+      <!-- Webview'ы будут добавляться динамически -->
+    </div>
+  </div>
+
+  <!-- ======== DROPDOWN MENU ======== -->
+  <div id="dropdown-menu" class="hidden">
+    <div class="menu-item" data-action="new-tab">
+      <span class="menu-icon">➕</span>
+      <span>Новая вкладка</span>
+      <span class="menu-shortcut">Ctrl+T</span>
+    </div>
+    <div class="menu-item" data-action="incognito">
+      <span class="menu-icon">🕶️</span>
+      <span>Новое окно инкогнито</span>
+      <span class="menu-shortcut">Ctrl+Shift+N</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="zoom-in">
+      <span class="menu-icon">🔍</span>
+      <span>Увеличить</span>
+      <span class="menu-shortcut">Ctrl++</span>
+    </div>
+    <div class="menu-item" data-action="zoom-out">
+      <span class="menu-icon">🔎</span>
+      <span>Уменьшить</span>
+      <span class="menu-shortcut">Ctrl+-</span>
+    </div>
+    <div class="menu-item" data-action="zoom-reset">
+      <span class="menu-icon">🔄</span>
+      <span>Сброс масштаба</span>
+      <span class="menu-shortcut">Ctrl+0</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="reading-mode">
+      <span class="menu-icon">📖</span>
+      <span>Режим чтения</span>
+    </div>
+    <div class="menu-item" data-action="split-view">
+      <span class="menu-icon">🔀</span>
+      <span>Split View</span>
+    </div>
+    <div class="menu-item" data-action="screenshot">
+      <span class="menu-icon">📸</span>
+      <span>Скриншот</span>
+      <span class="menu-shortcut">Ctrl+Shift+S</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="passwords">
+      <span class="menu-icon">🔐</span>
+      <span>Менеджер паролей</span>
+    </div>
+    <div class="menu-item" data-action="ai-chat">
+      <span class="menu-icon">🤖</span>
+      <span>AI Ассистент</span>
+    </div>
+    <div class="menu-item" data-action="vertical-tabs">
+      <span class="menu-icon">📌</span>
+      <span>Вертикальные вкладки</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="fullscreen">
+      <span class="menu-icon">⛶</span>
+      <span>Полный экран</span>
+      <span class="menu-shortcut">F11</span>
+    </div>
+    <div class="menu-item" data-action="devtools">
+      <span class="menu-icon">🔧</span>
+      <span>Инструменты разработчика</span>
+      <span class="menu-shortcut">Ctrl+Shift+I</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="toggle-bookmarks-bar">
+      <span class="menu-icon">📑</span>
+      <span>Панель закладок</span>
+    </div>
+    <div class="menu-item" data-action="clear-data">
+      <span class="menu-icon">🗑️</span>
+      <span>Очистить данные</span>
+      <span class="menu-shortcut">Ctrl+Shift+Del</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="settings">
+      <span class="menu-icon">⚙️</span>
+      <span>Настройки</span>
+    </div>
+    <div class="menu-item" data-action="about">
+      <span class="menu-icon">ℹ️</span>
+      <span>О браузере</span>
+    </div>
+  </div>
+
+  <!-- ======== DOWNLOADS PANEL ======== -->
+  <div id="downloads-panel" class="hidden">
+    <div class="panel-header">
+      <h3>Загрузки</h3>
+      <button id="btn-clear-downloads" class="panel-action-btn">Очистить</button>
+    </div>
+    <div id="downloads-list">
+      <div class="empty-state">Нет загрузок</div>
+    </div>
+  </div>
+
+  <!-- ======== FIND IN PAGE ======== -->
+  <div id="find-bar" class="hidden">
+    <input type="text" id="find-input" placeholder="Найти на странице...">
+    <span id="find-count">0/0</span>
+    <button id="find-prev" class="find-btn">▲</button>
+    <button id="find-next" class="find-btn">▼</button>
+    <button id="find-close" class="find-btn">✕</button>
+  </div>
+
+  <!-- ======== NOTIFICATION ======== -->
+  <div id="notification" class="hidden">
+    <span id="notification-text"></span>
+    <button id="notification-close">✕</button>
+  </div>
+
+  <!-- ======== LOADING INDICATOR ======== -->
+  <div id="loading-bar" class="hidden">
+    <div id="loading-progress"></div>
+  </div>
+
+    <!-- ======== COMMAND PALETTE ======== -->
+  <div id="command-overlay" class="hidden">
+    <div id="command-palette">
+      <input type="text" id="command-input" placeholder="Введите команду...">
+      <div id="command-results"></div>
+    </div>
+  </div>
+
+    <script src="js/utils.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/bookmarks.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/downloads.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/passwords.js"></script>
+  <script src="js/aichat.js"></script>
+  <script src="js/readingmode.js"></script>
+  <script src="js/splitview.js"></script>
+  <script src="js/updater.js"></script>     <!-- ДОБАВЬ -->
+  <script src="js/renderer.js"></script>
+</body>
+</html>

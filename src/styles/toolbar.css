@@ -1,0 +1,222 @@
+/* ============================================
+   TOOLBAR
+   ============================================ */
+
+#toolbar {
+  height: var(--toolbar-height);
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 6px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ============================================
+   NAV BUTTONS
+   ============================================ */
+
+#nav-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.nav-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+/* ============================================
+   URL BAR
+   ============================================ */
+
+#url-bar-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 0 4px 0 10px;
+  transition: var(--transition);
+  gap: 6px;
+}
+
+#url-bar-container:focus-within {
+  border-color: var(--accent);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+#security-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.security-secure { color: var(--success); }
+.security-insecure { color: var(--danger); }
+.security-unknown { color: var(--text-muted); }
+
+#url-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+#url-input::placeholder {
+  color: var(--text-muted);
+}
+
+#url-input::selection {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.url-action-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.url-action-btn:hover {
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.url-action-btn.bookmarked {
+  color: var(--warning);
+}
+
+.url-action-btn.bookmarked svg path {
+  fill: var(--warning);
+  stroke: var(--warning);
+}
+
+/* ============================================
+   TOOLBAR ACTIONS
+   ============================================ */
+
+#toolbar-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.action-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  position: relative;
+}
+
+.action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.action-btn.active {
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* ============================================
+   BOOKMARKS BAR
+   ============================================ */
+
+#bookmarks-bar {
+  height: var(--bookmarks-bar-height);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+#bookmarks-bar::-webkit-scrollbar {
+  height: 0;
+}
+
+#bookmarks-bar-items {
+  display: flex;
+  gap: 4px;
+}
+
+.bookmark-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.bookmark-bar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.bookmark-bar-item img {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}

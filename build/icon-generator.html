@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nova Browser Icon Generator</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      color: #e6e6e6;
+      gap: 24px;
+    }
+    h1 { color: #7c3aed; }
+    canvas { border: 2px solid #333; border-radius: 16px; }
+    .sizes { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .size-item { text-align: center; }
+    button {
+      padding: 12px 32px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #9333ea; }
+    .instructions {
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 600px;
+      text-align: center;
+      line-height: 1.6;
+      color: #a0a0b0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Nova Browser Icon Generator</h1>
+
+  <div class="sizes" id="sizes"></div>
+
+  <button onclick="downloadAll()">📥 Скачать все размеры (PNG)</button>
+
+  <div class="instructions">
+    <p><strong>Инструкция:</strong></p>
+    <p>1. Нажмите кнопку выше — скачаются PNG файлы</p>
+    <p>2. Перейдите на <a href="https://convertico.com" target="_blank" style="color:#7c3aed">convertico.com</a></p>
+    <p>3. Загрузите самый большой PNG (256x256)</p>
+    <p>4. Скачайте .ico и положите в папку <code>build/icon.ico</code></p>
+    <p>5. Запустите <code>npm run build</code></p>
+  </div>
+
+  <script>
+    const sizes = [16, 32, 48, 64, 128, 256];
+
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+
+      const s = size / 256; // scale factor
+
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, '#7c3aed');
+      grad.addColorStop(0.5, '#6d28d9');
+      grad.addColorStop(1, '#4c1d95');
+
+      // Rounded rectangle
+      const r = 48 * s;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(size - r, 0);
+      ctx.quadraticCurveTo(size, 0, size, r);
+      ctx.lineTo(size, size - r);
+      ctx.quadraticCurveTo(size, size, size - r, size);
+      ctx.lineTo(r, size);
+      ctx.quadraticCurveTo(0, size, 0, size - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Inner ring
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 80*s, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 3 * s;
+      ctx.stroke();
+
+      // Orbit dots ring
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 60*s, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 2 * s;
+      ctx.setLineDash([6*s, 5*s]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Check mark with glow
+      ctx.shadowColor = 'rgba(255,255,255,0.4)';
+      ctx.shadowBlur = 10 * s;
+
+      ctx.beginPath();
+      ctx.moveTo(85*s, 128*s);
+      ctx.lineTo(115*s, 158*s);
+      ctx.lineTo(171*s, 102*s);
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = Math.max(14 * s, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+
+      // Decorative dots
+      if (size >= 64) {
+        const dots = [
+          {x: 128, y: 40, r: 5},
+          {x: 216, y: 128, r: 4},
+          {x: 128, y: 216, r: 4},
+          {x: 40, y: 128, r: 5}
+        ];
+        dots.forEach(dot => {
+          ctx.beginPath();
+          ctx.arc(dot.x*s, dot.y*s, dot.r*s, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.fill();
+        });
+      }
+    }
+
+    // Render all sizes
+    const container = document.getElementById('sizes');
+    const canvases = {};
+
+    sizes.forEach(size => {
+      const div = document.createElement('div');
+      div.className = 'size-item';
+
+      const canvas = document.createElement('canvas');
+      drawIcon(canvas, size);
+      canvases[size] = canvas;
+
+      const label = document.createElement('div');
+      label.textContent = `${size}×${size}`;
+      label.style.fontSize = '12px';
+      label.style.marginTop = '6px';
+      label.style.color = '#6b6b80';
+
+      div.appendChild(canvas);
+      div.appendChild(label);
+      container.appendChild(div);
+    });
+
+    function downloadAll() {
+      sizes.forEach(size => {
+        const canvas = canvases[size];
+        const link = document.createElement('a');
+        link.download = `icon-${size}x${size}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>

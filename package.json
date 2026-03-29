@@ -1,0 +1,56 @@
+{
+  "name": "nova-browser",
+  "version": "1.1.0",
+  "description": "Nova Browser",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build --win nsis --x64",
+    "build:publish": "electron-builder build --win nsis --x64 --publish always",
+    "release": "electron-builder build --win nsis --x64 --publish always"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Orang786/nova-browser.git"
+  },
+  "author": "Nova Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.1.0",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.7",
+    "uuid": "^9.0.0"
+  },
+  "build": {
+    "appId": "com.nova.browser",
+    "productName": "Nova Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Orang786",
+        "repo": "nova-browser2",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "Nova-Browser-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nova Browser",
+      "runAfterFinish": true
+    }
+  }
+}

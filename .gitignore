@@ -1,0 +1,9 @@
+@"
+node_modules/
+dist/
+build/*.exe
+build/*.bmp
+*.exe
+*.blockmap
+.env
+"@ | Out-File -Encoding UTF8 .gitignore

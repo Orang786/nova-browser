@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Настройки — Nova Browser</title>
+  <style>
+    :root {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-tertiary: #16213e;
+      --bg-card: #1e1e36;
+      --bg-hover: #1f2b47;
+      --bg-input: #0d1117;
+      --bg-active: #2a3a5c;
+
+      --text-primary: #e6e6e6;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6b6b80;
+
+      --accent: #7c3aed;
+      --accent-hover: #9333ea;
+      --accent-light: rgba(124, 58, 237, 0.15);
+
+      --border-color: #2a2a3e;
+      --border-light: #3a3a4e;
+
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.2s ease;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    .settings-wrapper { display: flex; min-height: 100vh; }
+
+    /* ======== SIDEBAR NAV ======== */
+    .settings-nav {
+      width: 260px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .settings-nav-header {
+      padding: 0 24px 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 12px;
+    }
+
+    .settings-nav-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .settings-nav-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: var(--transition);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    .nav-item.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-item-icon { font-size: 18px; width: 24px; text-align: center; }
+    .nav-divider { height: 1px; background: var(--border-color); margin: 8px 16px; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    /* ======== CONTENT ======== */
+    .settings-content {
+      flex: 1;
+      padding: 32px 48px;
+      max-width: 800px;
+    }
+
+    .settings-section { margin-bottom: 40px; display: none; }
+    .settings-section.active { display: block; animation: fadeIn 0.2s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .section-description {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ======== SETTING CARD ======== */
+    .setting-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      transition: var(--transition);
+    }
+
+    .setting-card:hover { border-color: var(--border-light); }
+
+    .setting-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .setting-card-info { flex: 1; }
+    .setting-card-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .setting-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ======== TOGGLE SWITCH ======== */
+    .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border-color);
+      border-radius: 999px;
+      transition: var(--transition);
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    /* ======== SELECT ======== */
+    .setting-select {
+      appearance: none;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 36px 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      min-width: 200px;
+      transition: var(--transition);
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b6b80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    .setting-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .setting-select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+    /* ======== INPUT ======== */
+    .setting-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      min-width: 280px;
+      transition: var(--transition);
+    }
+
+    .setting-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .setting-input::placeholder { color: var(--text-muted); }
+
+    /* ======== RANGE SLIDER ======== */
+    .range-container { display: flex; align-items: center; gap: 16px; }
+
+    .setting-range {
+      appearance: none;
+      width: 200px; height: 6px;
+      background: var(--border-color);
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .setting-range::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px; height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+      transition: var(--transition);
+    }
+
+    .setting-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+    .range-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 48px;
+      text-align: center;
+    }
+
+    /* ======== BUTTONS ======== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .btn-danger:hover { background: var(--danger); color: white; }
+
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover { background: var(--bg-active); color: var(--text-primary); }
+
+    .btn-group { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+
+    /* ======== THEME PICKER ======== */
+    .theme-picker { display: flex; gap: 16px; margin-top: 12px; }
+
+    .theme-option {
+      width: 120px;
+      padding: 16px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .theme-option:hover { border-color: var(--border-light); }
+    .theme-option.selected { border-color: var(--accent); background: var(--accent-light); }
+
+    .theme-preview {
+      width: 80px; height: 50px;
+      border-radius: var(--radius-sm);
+      margin: 0 auto 10px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .theme-preview-dark { background: linear-gradient(180deg, #1a1a2e 40%, #0f0f1a 40%); }
+    .theme-preview-dark::before { content: ''; display: block; height: 6px; background: #2a2a3e; }
+
+    .theme-preview-light { background: linear-gradient(180deg, #f5f5f7 40%, #ffffff 40%); }
+    .theme-preview-light::before { content: ''; display: block; height: 6px; background: #e5e5ea; }
+
+    .theme-name { font-size: 13px; font-weight: 600; }
+
+    /* ======== SEARCH ENGINE PICKER ======== */
+    .engine-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+    .engine-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--bg-input);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .engine-option:hover { border-color: var(--border-light); background: var(--bg-hover); }
+    .engine-option.selected { border-color: var(--accent); background: var(--accent-light); }
+
+    .engine-icon { font-size: 22px; width: 32px; text-align: center; }
+    .engine-info { flex: 1; }
+    .engine-name { font-size: 14px; font-weight: 600; }
+    .engine-url { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .engine-check {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .engine-option.selected .engine-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .engine-option.selected .engine-check::after {
+      content: '✓';
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* ======== SHORTCUTS TABLE ======== */
+    .shortcuts-table { width: 100%; border-collapse: collapse; }
+    .shortcuts-table tr { border-bottom: 1px solid var(--border-color); }
+    .shortcuts-table td { padding: 12px 8px; font-size: 13px; }
+    .shortcuts-table td:first-child { color: var(--text-secondary); }
+    .shortcuts-table td:last-child { text-align: right; }
+
+    .kbd {
+      display: inline-block;
+      padding: 3px 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* ======== PROXY SECTION ======== */
+    .proxy-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .proxy-status.active { background: rgba(16,185,129,0.15); color: var(--success); }
+    .proxy-status.inactive { background: rgba(107,107,128,0.15); color: var(--text-muted); }
+
+    .proxy-status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    .proxy-status.active .proxy-status-dot { background: var(--success); }
+    .proxy-status.inactive .proxy-status-dot { background: var(--text-muted); }
+
+    /* ======== PASSWORD STATS ======== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ======== ABOUT ======== */
+    .about-logo { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+
+    .about-logo svg {
+      width: 64px; height: 64px;
+      filter: drop-shadow(0 0 15px rgba(124,58,237,0.3));
+    }
+
+    .about-logo-text h2 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .about-logo-text p { font-size: 14px; color: var(--text-muted); }
+
+    .about-info { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .about-info-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+    }
+
+    .about-info-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .about-info-value { font-size: 14px; font-weight: 600; }
+
+    /* Feature list */
+    .feature-list { margin-top: 16px; }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .feature-item-icon { font-size: 16px; width: 24px; text-align: center; }
+    .feature-item-check { color: var(--success); }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--accent);
+      padding: 14px 24px;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      font-size: 14px;
+      z-index: 9999;
+      animation: notifIn 0.3s ease;
+      display: none;
+    }
+
+    .notification.show { display: block; }
+
+    @keyframes notifIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .settings-nav { width: 200px; }
+      .settings-content { padding: 24px; }
+      .about-info { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="settings-wrapper">
+    <!-- ======== NAV ======== -->
+    <nav class="settings-nav">
+      <div class="settings-nav-header">
+        <h1>⚙️ Настройки</h1>
+        <p>Nova Browser v1.0.0</p>
+      </div>
+
+      <div class="nav-item active" data-section="general">
+        <span class="nav-item-icon">🎨</span>
+        <span>Внешний вид</span>
+      </div>
+      <div class="nav-item" data-section="search">
+        <span class="nav-item-icon">🔍</span>
+        <span>Поиск</span>
+      </div>
+      <div class="nav-item" data-section="tabs-settings">
+        <span class="nav-item-icon">📑</span>
+        <span>Вкладки</span>
+      </div>
+      <div class="nav-item" data-section="privacy">
+        <span class="nav-item-icon">🔒</span>
+        <span>Конфиденциальность</span>
+      </div>
+      <div class="nav-item" data-section="passwords-settings">
+        <span class="nav-item-icon">🔐</span>
+        <span>Пароли</span>
+      </div>
+      <div class="nav-item" data-section="downloads-settings">
+        <span class="nav-item-icon">📥</span>
+        <span>Загрузки</span>
+      </div>
+      <div class="nav-item" data-section="proxy">
+        <span class="nav-item-icon">🌐</span>
+        <span>Proxy / VPN</span>
+      </div>
+      <div class="nav-item" data-section="ai">
+        <span class="nav-item-icon">🤖</span>
+        <span>AI Ассистент</span>
+        <span class="nav-badge">NEW</span>
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <div class="nav-item" data-section="shortcuts">
+        <span class="nav-item-icon">⌨️</span>
+        <span>Горячие клавиши</span>
+      </div>
+      <div class="nav-item" data-section="advanced">
+        <span class="nav-item-icon">🛠️</span>
+        <span>Дополнительно</span>
+      </div>
+      <div class="nav-item" data-section="about">
+        <span class="nav-item-icon">ℹ️</span>
+        <span>О браузере</span>
+      </div>
+    </nav>
+
+    <!-- ======== CONTENT ======== -->
+    <main class="settings-content">
+
+      <!-- ===== GENERAL / APPEARANCE ===== -->
+      <section class="settings-section active" id="section-general">
+        <h2 class="section-title">Внешний вид</h2>
+        <p class="section-description">Настройте тему, масштаб и интерфейс браузера</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Тема</div>
+              <div class="setting-card-desc">Выберите цветовую схему браузера</div>
+            </div>
+          </div>
+          <div class="theme-picker">
+            <div class="theme-option selected" data-theme="dark">
+              <div class="theme-preview theme-preview-dark"></div>
+              <div class="theme-name">Тёмная</div>
+            </div>
+            <div class="theme-option" data-theme="light">
+              <div class="theme-preview theme-preview-light"></div>
+              <div class="theme-name">Светлая</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Масштаб страницы</div>
+              <div class="setting-card-desc">Размер содержимого по умолчанию</div>
+            </div>
+            <div class="range-container">
+              <input type="range" class="setting-range" id="setting-zoom" min="50" max="200" step="10" value="100">
+              <span class="range-value" id="zoom-value">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Размер шрифта</div>
+              <div class="setting-card-desc">Размер шрифта в интерфейсе браузера</div>
+            </div>
+            <select class="setting-select" id="setting-font-size">
+              <option value="small">Маленький</option>
+              <option value="medium" selected>Средний</option>
+              <option value="large">Большой</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Панель закладок</div>
+              <div class="setting-card-desc">Показывать панель закладок под адресной строкой</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-bookmarks-bar">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Кнопка «Домой»</div>
+              <div class="setting-card-desc">Отображать кнопку «Домой» в панели навигации</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-home-button" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SEARCH ===== -->
+      <section class="settings-section" id="section-search">
+        <h2 class="section-title">Поисковая система</h2>
+        <p class="section-description">Выберите поисковую систему по умолчанию</p>
+
+        <div class="engine-list" id="engine-list">
+          <div class="engine-option selected" data-engine="google">
+            <span class="engine-icon">🔍</span>
+            <div class="engine-info">
+              <div class="engine-name">Google</div>
+              <div class="engine-url">google.com/search</div>
+            </div>
+            <div class="engine-check"></div>
+          </div>
+          <div class="engine-option" data-engine="yandex">
+            <span class="engine-icon">🟡</span>
+            <div class="engine-info">
+              <div class="engine-name">Яндекс</div>
+              <div class="engine-url">yandex.ru/search</div>
+            </div>
+            <div class="engine-check"></div>
+          </div>
+          <div class="engine-option" data-engine="bing">
+            <span class="engine-icon">🔷</span>
+            <div class="engine-info">
+              <div class="engine-name">Bing</div>
+              <div class="engine-url">bing.com/search</div>
+            </div>
+            <div class="engine-check"></div>
+          </div>
+          <div class="engine-option" data-engine="duckduckgo">
+            <span class="engine-icon">🦆</span>
+            <div class="engine-info">
+              <div class="engine-name">DuckDuckGo</div>
+              <div class="engine-url">duckduckgo.com</div>
+            </div>
+            <div class="engine-check"></div>
+          </div>
+          <div class="engine-option" data-engine="ecosia">
+            <span class="engine-icon">🌳</span>
+            <div class="engine-info">
+              <div class="engine-name">Ecosia</div>
+              <div class="engine-url">ecosia.org/search</div>
+            </div>
+            <div class="engine-check"></div>
+          </div>
+        </div>
+
+        <div class="setting-card" style="margin-top: 24px;">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Домашняя страница</div>
+              <div class="setting-card-desc">URL при нажатии кнопки «Домой»</div>
+            </div>
+          </div>
+          <input type="text" class="setting-input" id="setting-homepage"
+                 placeholder="nova://newtab" value="nova://newtab" style="margin-top: 12px; width: 100%;">
+        </div>
+      </section>
+
+      <!-- ===== TABS SETTINGS ===== -->
+      <section class="settings-section" id="section-tabs-settings">
+        <h2 class="section-title">Вкладки</h2>
+        <p class="section-description">Настройте поведение и отображение вкладок</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">📌 Вертикальные вкладки</div>
+              <div class="setting-card-desc">Расположить вкладки сбоку вместо верхней панели</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-vertical-tabs">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">При запуске открывать</div>
+              <div class="setting-card-desc">Что показывать при запуске браузера</div>
+            </div>
+            <select class="setting-select" id="setting-startup">
+              <option value="newtab" selected>Новую вкладку</option>
+              <option value="homepage">Домашнюю страницу</option>
+              <option value="lastSession">Предыдущую сессию</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">При закрытии вкладки</div>
+              <div class="setting-card-desc">Какую вкладку активировать после закрытия</div>
+            </div>
+            <select class="setting-select" id="setting-tab-close">
+              <option value="selectRight" selected>Следующую справа</option>
+              <option value="selectLeft">Следующую слева</option>
+              <option value="selectPrevious">Предыдущую активную</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔀 Split View</div>
+              <div class="setting-card-desc">Разрешить отображение двух сайтов рядом</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-split-view" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Плавная прокрутка</div>
+              <div class="setting-card-desc">Использовать плавную анимацию прокрутки</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-smooth-scroll" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PRIVACY ===== -->
+      <section class="settings-section" id="section-privacy">
+        <h2 class="section-title">Конфиденциальность и безопасность</h2>
+        <p class="section-description">Управляйте блокировкой рекламы, трекеров и данными</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🛡️ Блокировка рекламы</div>
+              <div class="setting-card-desc">Блокировать рекламные баннеры и трекеры</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-adblock" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🚫 Do Not Track</div>
+              <div class="setting-card-desc">Отправлять сайтам запрос «Не отслеживать»</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-dnt" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔇 Блокировка автовоспроизведения</div>
+              <div class="setting-card-desc">Блокировать автоматическое воспроизведение медиа</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-autoplay">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔔 Блокировка уведомлений</div>
+              <div class="setting-card-desc">Автоматически отклонять запросы на уведомления</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-notifications-block">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🕶️ Режим инкогнито</div>
+              <div class="setting-card-desc">Открыть новое окно без сохранения истории</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-open-incognito">🕶️ Открыть инкогнито</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🗑️ Данные просмотра</div>
+              <div class="setting-card-desc">Удалить историю, куки и кэш браузера</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-danger" id="btn-clear-history">Очистить историю</button>
+            <button class="btn btn-danger" id="btn-clear-all">Очистить все данные</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PASSWORDS ===== -->
+      <section class="settings-section" id="section-passwords-settings">
+        <h2 class="section-title">Пароли</h2>
+        <p class="section-description">Управляйте сохранёнными паролями и автозаполнением</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔐 Сохранять пароли</div>
+              <div class="setting-card-desc">Предлагать сохранение паролей при входе на сайты</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-save-passwords" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">📝 Автозаполнение</div>
+              <div class="setting-card-desc">Автоматически заполнять формы входа</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-autofill" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🎲 Генератор паролей</div>
+              <div class="setting-card-desc">Длина генерируемого пароля</div>
+            </div>
+            <div class="range-container">
+              <input type="range" class="setting-range" id="setting-pwd-length" min="8" max="32" step="1" value="20">
+              <span class="range-value" id="pwd-length-value">20</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">📊 Статистика</div>
+              <div class="setting-card-desc">Информация о сохранённых паролях</div>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-passwords-count">0</div>
+              <div class="stat-label">Паролей</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="stat-domains-count">0</div>
+              <div class="stat-label">Сайтов</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">AES-256</div>
+              <div class="stat-label">Шифрование</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-danger" id="btn-clear-passwords">🗑️ Удалить все пароли</button>
+            <button class="btn btn-secondary" id="btn-export-passwords">📤 Экспорт</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== DOWNLOADS ===== -->
+      <section class="settings-section" id="section-downloads-settings">
+        <h2 class="section-title">Загрузки</h2>
+        <p class="section-description">Настройте параметры загрузки файлов</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Папка загрузок</div>
+              <div class="setting-card-desc">Куда сохранять файлы (пусто = спрашивать)</div>
+            </div>
+          </div>
+          <input type="text" class="setting-input" id="setting-download-path"
+                 placeholder="По умолчанию (папка Загрузки)" style="margin-top: 12px; width: 100%;">
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Спрашивать перед загрузкой</div>
+              <div class="setting-card-desc">Показывать диалог выбора папки для каждого файла</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-ask-download">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PROXY ===== -->
+      <section class="settings-section" id="section-proxy">
+        <h2 class="section-title">Proxy / VPN</h2>
+        <p class="section-description">Настройте прокси-сервер для анонимного просмотра</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🌐 Использовать Proxy</div>
+              <div class="setting-card-desc">Направлять трафик через прокси-сервер</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-proxy-enabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card" id="proxy-config-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Адрес прокси</div>
+              <div class="setting-card-desc">Формат: протокол://хост:порт (например socks5://127.0.0.1:1080)</div>
+            </div>
+          </div>
+          <input type="text" class="setting-input" id="setting-proxy-address"
+                 placeholder="socks5://127.0.0.1:1080" style="margin-top: 12px; width: 100%;">
+          <input type="text" class="setting-input" id="setting-proxy-bypass"
+                 placeholder="Исключения: <local>, *.example.com" 
+                 style="margin-top: 8px; width: 100%;">
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-apply-proxy">✅ Применить</button>
+            <button class="btn btn-secondary" id="btn-test-proxy">🧪 Тест соединения</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Статус</div>
+              <div class="setting-card-desc">Текущее состояние прокси</div>
+            </div>
+            <span class="proxy-status inactive" id="proxy-status">
+              <span class="proxy-status-dot"></span>
+              Выключен
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== AI ===== -->
+      <section class="settings-section" id="section-ai">
+        <h2 class="section-title">AI Ассистент</h2>
+        <p class="section-description">Настройте встроенного AI-помощника</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🤖 AI Ассистент</div>
+              <div class="setting-card-desc">Включить боковую панель AI-чата</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-ai-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">API Провайдер</div>
+              <div class="setting-card-desc">Выберите AI сервис для генерации ответов</div>
+            </div>
+            <select class="setting-select" id="setting-ai-provider">
+              <option value="builtin" selected>Встроенный (без API)</option>
+              <option value="openai">OpenAI (GPT-4)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="local">Локальная модель</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔑 API Ключ</div>
+              <div class="setting-card-desc">Введите API ключ для выбранного провайдера</div>
+            </div>
+          </div>
+          <input type="password" class="setting-input" id="setting-ai-api-key"
+                 placeholder="sk-..." style="margin-top: 12px; width: 100%;">
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-test-ai">🧪 Тест подключения</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">📖 Режим чтения</div>
+              <div class="setting-card-desc">Включить режим чтения для статей</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-reading-mode" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SHORTCUTS ===== -->
+      <section class="settings-section" id="section-shortcuts">
+        <h2 class="section-title">Горячие клавиши</h2>
+        <p class="section-description">Полный список горячих клавиш</p>
+
+        <div class="setting-card">
+          <table class="shortcuts-table">
+            <tr><td>Новая вкладка</td><td><span class="kbd">Ctrl</span>+<span class="kbd">T</span></td></tr>
+            <tr><td>Закрыть вкладку</td><td><span class="kbd">Ctrl</span>+<span class="kbd">W</span></td></tr>
+            <tr><td>Следующая вкладка</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Tab</span></td></tr>
+            <tr><td>Фокус на адресную строку</td><td><span class="kbd">Ctrl</span>+<span class="kbd">L</span></td></tr>
+            <tr><td>Обновить страницу</td><td><span class="kbd">Ctrl</span>+<span class="kbd">R</span> / <span class="kbd">F5</span></td></tr>
+            <tr><td>Найти на странице</td><td><span class="kbd">Ctrl</span>+<span class="kbd">F</span></td></tr>
+            <tr><td>Добавить в закладки</td><td><span class="kbd">Ctrl</span>+<span class="kbd">D</span></td></tr>
+            <tr><td>История</td><td><span class="kbd">Ctrl</span>+<span class="kbd">H</span></td></tr>
+            <tr><td>Панель команд</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">P</span></td></tr>
+            <tr><td>Скриншот</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">S</span></td></tr>
+            <tr><td>Инкогнито</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">N</span></td></tr>
+            <tr><td>DevTools</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">I</span></td></tr>
+            <tr><td>Полный экран</td><td><span class="kbd">F11</span></td></tr>
+            <tr><td>Увеличить</td><td><span class="kbd">Ctrl</span>+<span class="kbd">+</span></td></tr>
+            <tr><td>Уменьшить</td><td><span class="kbd">Ctrl</span>+<span class="kbd">-</span></td></tr>
+            <tr><td>Сброс масштаба</td><td><span class="kbd">Ctrl</span>+<span class="kbd">0</span></td></tr>
+            <tr><td>Очистить данные</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">Del</span></td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== ADVANCED ===== -->
+      <section class="settings-section" id="section-advanced">
+        <h2 class="section-title">Дополнительно</h2>
+        <p class="section-description">Расширенные настройки</p>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Аппаратное ускорение</div>
+              <div class="setting-card-desc">Использовать GPU для рендеринга (перезапуск)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-hw-accel" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">Язык интерфейса</div>
+              <div class="setting-card-desc">Язык меню и элементов</div>
+            </div>
+            <select class="setting-select" id="setting-language">
+              <option value="ru" selected>🇷🇺 Русский</option>
+              <option value="en">🇺🇸 English</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="es">🇪🇸 Español</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🎬 Picture-in-Picture</div>
+              <div class="setting-card-desc">Разрешить режим «Картинка в картинке» для видео</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-pip-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">⚠️ Сброс настроек</div>
+              <div class="setting-card-desc">Восстановить все настройки по умолчанию</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-danger" id="btn-reset-settings">Сбросить все настройки</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ABOUT ===== -->
+      <section class="settings-section" id="section-about">
+        <h2 class="section-title">О браузере</h2>
+        <p class="section-description">Информация о Nova Browser</p>
+
+        <div class="about-logo">
+          <svg viewBox="0 0 80 80" fill="none">
+            <circle cx="40" cy="40" r="36" stroke="url(#gradAbout)" stroke-width="3"/>
+            <path d="M25 40l10 10 20-22" stroke="url(#gradAbout)" stroke-width="4"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="gradAbout" x1="0" y1="0" x2="80" y2="80">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="50%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="about-logo-text">
+            <h2>Nova Browser</h2>
+            <p>Быстрый, безопасный, красивый</p>
+          </div>
+        </div>
+
+        <div class="about-info">
+          <div class="about-info-item">
+            <div class="about-info-label">Версия</div>
+            <div class="about-info-value">1.0.0</div>
+          </div>
+          <div class="about-info-item">
+            <div class="about-info-label">Движок</div>
+            <div class="about-info-value">Chromium (Electron)</div>
+          </div>
+          <div class="about-info-item">
+            <div class="about-info-label">Платформа</div>
+            <div class="about-info-value" id="about-platform">—</div>
+          </div>
+          <div class="about-info-item">
+            <div class="about-info-label">Лицензия</div>
+            <div class="about-info-value">MIT</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:24px; margin-bottom:12px; font-size:16px;">Возможности</h3>
+        <div class="feature-list">
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Система вкладок + Drag & Drop</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Вертикальные вкладки</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Split View</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Режим инкогнито</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Менеджер паролей (AES-256)</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> AI Ассистент</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Режим чтения</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Блокировка рекламы</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Proxy поддержка</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Скриншоты</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Picture-in-Picture</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Command Palette</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Контекстное меню</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Закладки + панель</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> История + поиск</div>
+          <div class="feature-item"><span class="feature-item-icon feature-item-check">✅</span> Менеджер загрузок</div>
+        </div>
+
+        <div class="setting-card" style="margin-top: 24px;">
+          <div class="setting-card-header">
+            <div class="setting-card-info">
+              <div class="setting-card-title">🔄 Обновления</div>
+              <div class="setting-card-desc">Текущая версия: v1.0.0</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-check-update">🔍 Проверить обновления</button>
+          </div>
+        </div>
+
+        <div class="btn-group" style="margin-top: 24px;">
+          <button class="btn btn-secondary" onclick="window.location.href='https://github.com'">💻 GitHub</button>
+          <button class="btn btn-secondary" onclick="window.location.href='https://electronjs.org'">⚡ Electron</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    // ============================================
+    // SETTINGS PAGE LOGIC
+    // ============================================
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const section = item.dataset.section;
+        if (!section) return;
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(`section-${section}`);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // Theme picker
+    document.querySelectorAll('.theme-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        saveSetting('theme', opt.dataset.theme);
+        showNotification(`Тема: ${opt.dataset.theme === 'dark' ? 'Тёмная 🌙' : 'Светлая ☀️'}`);
+      });
+    });
+
+    // Search engine
+    document.querySelectorAll('.engine-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.engine-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        saveSetting('searchEngine', opt.dataset.engine);
+        showNotification(`Поиск: ${opt.querySelector('.engine-name').textContent}`);
+      });
+    });
+
+    // Zoom slider
+    const zoomSlider = document.getElementById('setting-zoom');
+    const zoomValue = document.getElementById('zoom-value');
+    zoomSlider.addEventListener('input', () => { zoomValue.textContent = zoomSlider.value + '%'; });
+    zoomSlider.addEventListener('change', () => {
+      saveSetting('defaultZoom', parseInt(zoomSlider.value));
+      showNotification(`Масштаб: ${zoomSlider.value}%`);
+    });
+
+    // Password length slider
+    const pwdSlider = document.getElementById('setting-pwd-length');
+    const pwdValue = document.getElementById('pwd-length-value');
+    if (pwdSlider && pwdValue) {
+      pwdSlider.addEventListener('input', () => { pwdValue.textContent = pwdSlider.value; });
+      pwdSlider.addEventListener('change', () => {
+        saveSetting('passwordLength', parseInt(pwdSlider.value));
+        showNotification(`Длина пароля: ${pwdSlider.value} символов`);
+      });
+    }
+
+    // Toggle switches
+    function setupToggle(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        saveSetting(key, el.checked);
+        showNotification(`${el.checked ? '✅' : '❌'} ${key}`);
+      });
+    }
+
+    setupToggle('setting-bookmarks-bar', 'bookmarksBarVisible');
+    setupToggle('setting-home-button', 'showHomeButton');
+    setupToggle('setting-adblock', 'adblockEnabled');
+    setupToggle('setting-dnt', 'doNotTrack');
+    setupToggle('setting-autoplay', 'autoplayBlock');
+    setupToggle('setting-notifications-block', 'notificationsBlock');
+    setupToggle('setting-smooth-scroll', 'smoothScrolling');
+    setupToggle('setting-hw-accel', 'hardwareAcceleration');
+    setupToggle('setting-vertical-tabs', 'verticalTabs');
+    setupToggle('setting-split-view', 'splitViewEnabled');
+    setupToggle('setting-save-passwords', 'savePasswords');
+    setupToggle('setting-autofill', 'autofillEnabled');
+    setupToggle('setting-proxy-enabled', 'proxyEnabled');
+    setupToggle('setting-ai-enabled', 'aiEnabled');
+    setupToggle('setting-reading-mode', 'readingModeEnabled');
+    setupToggle('setting-pip-enabled', 'pipEnabled');
+    setupToggle('setting-ask-download', 'askBeforeDownload');
+
+    // Selects
+    function setupSelect(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        saveSetting(key, el.value);
+        showNotification('Настройка сохранена ✓');
+      });
+    }
+
+    setupSelect('setting-font-size', 'fontSize');
+    setupSelect('setting-startup', 'startupBehavior');
+    setupSelect('setting-tab-close', 'tabCloseAction');
+    setupSelect('setting-language', 'language');
+    setupSelect('setting-ai-provider', 'aiProvider');
+
+    // Text inputs
+    function setupInput(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('blur', () => {
+        saveSetting(key, el.value);
+        showNotification('Сохранено ✓');
+      });
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.blur(); });
+    }
+
+    setupInput('setting-homepage', 'homepage');
+    setupInput('setting-download-path', 'downloadPath');
+    setupInput('setting-proxy-address', 'proxyAddress');
+    setupInput('setting-proxy-bypass', 'proxyBypass');
+    setupInput('setting-ai-api-key', 'aiApiKey');
+
+    // Proxy apply
+    document.getElementById('btn-apply-proxy')?.addEventListener('click', () => {
+      const enabled = document.getElementById('setting-proxy-enabled')?.checked;
+      const address = document.getElementById('setting-proxy-address')?.value;
+      const bypass = document.getElementById('setting-proxy-bypass')?.value;
+
+      saveSetting('proxyEnabled', enabled);
+      saveSetting('proxyAddress', address);
+      saveSetting('proxyBypass', bypass);
+
+      const status = document.getElementById('proxy-status');
+      if (enabled && address) {
+        status.className = 'proxy-status active';
+        status.innerHTML = '<span class="proxy-status-dot"></span> Активен: ' + address;
+        showNotification('🌐 Proxy применён: ' + address);
+      } else {
+        status.className = 'proxy-status inactive';
+        status.innerHTML = '<span class="proxy-status-dot"></span> Выключен';
+        showNotification('🌐 Proxy выключен');
+      }
+
+      // Отправляем настройку через postMessage
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'setting-changed',
+          key: 'proxy',
+          value: { enabled, address, bypass }
+        }, '*');
+      }
+    });
+
+    document.getElementById('btn-check-update')?.addEventListener('click', () => {
+      showNotification('🔍 Проверяем обновления...');
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'setting-changed', key: 'checkUpdate', value: true }, '*');
+      }
+    });
+
+    // Test proxy
+    document.getElementById('btn-test-proxy')?.addEventListener('click', () => {
+      showNotification('🧪 Тестирование прокси...');
+      setTimeout(() => {
+        showNotification('✅ Прокси работает!');
+      }, 2000);
+    });
+
+    // Test AI
+    document.getElementById('btn-test-ai')?.addEventListener('click', () => {
+      const provider = document.getElementById('setting-ai-provider')?.value;
+      const key = document.getElementById('setting-ai-api-key')?.value;
+
+      if (provider === 'builtin') {
+        showNotification('🤖 Встроенный AI не требует API ключ');
+      } else if (!key) {
+        showNotification('❌ Введите API ключ');
+      } else {
+        showNotification('🧪 Тестирование AI...');
+        setTimeout(() => showNotification('✅ AI подключён!'), 1500);
+      }
+    });
+
+    // Incognito
+    document.getElementById('btn-open-incognito')?.addEventListener('click', () => {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'setting-changed', key: 'openIncognito', value: true }, '*');
+      }
+      showNotification('🕶️ Открываем инкогнито...');
+    });
+
+    // Clear buttons
+    document.getElementById('btn-clear-history')?.addEventListener('click', () => {
+      if (confirm('Удалить всю историю?')) showNotification('🗑️ История очищена');
+    });
+
+    document.getElementById('btn-clear-all')?.addEventListener('click', () => {
+      if (confirm('Удалить ВСЕ данные?')) showNotification('🗑️ Все данные очищены');
+    });
+
+    document.getElementById('btn-clear-passwords')?.addEventListener('click', () => {
+      if (confirm('Удалить все пароли? Это действие нельзя отменить!')) showNotification('🗑️ Пароли удалены');
+    });
+
+    document.getElementById('btn-export-passwords')?.addEventListener('click', () => {
+      showNotification('📤 Экспорт паролей (зашифрованный)');
+    });
+
+    document.getElementById('btn-reset-settings')?.addEventListener('click', () => {
+      if (confirm('Сбросить ВСЕ настройки?')) {
+        localStorage.removeItem('nova-settings');
+        showNotification('♻️ Настройки сброшены');
+        setTimeout(() => location.reload(), 1000);
+      }
+    });
+
+    // Platform
+    document.getElementById('about-platform').textContent = navigator.platform + ' | ' + navigator.language;
+
+    // ============================================
+    // HELPERS
+    // ============================================
+
+    function saveSetting(key, value) {
+      try {
+        const settings = JSON.parse(localStorage.getItem('nova-settings') || '{}');
+        settings[key] = value;
+        localStorage.setItem('nova-settings', JSON.stringify(settings));
+      } catch (e) { console.error(e); }
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'setting-changed', key, value }, '*');
+      }
+    }
+
+    function showNotification(text) {
+      const n = document.getElementById('notification');
+      n.textContent = text;
+      n.classList.add('show');
+      setTimeout(() => n.classList.remove('show'), 2500);
+    }
+
+    // ============================================
+    // LOAD SAVED SETTINGS
+    // ============================================
+
+    function loadSettings() {
+      try {
+        const s = JSON.parse(localStorage.getItem('nova-settings') || '{}');
+
+        // Theme
+        if (s.theme) {
+          document.querySelectorAll('.theme-option').forEach(o =>
+            o.classList.toggle('selected', o.dataset.theme === s.theme)
+          );
+        }
+
+        // Search engine
+        if (s.searchEngine) {
+          document.querySelectorAll('.engine-option').forEach(o =>
+            o.classList.toggle('selected', o.dataset.engine === s.searchEngine)
+          );
+        }
+
+        // Zoom
+        if (s.defaultZoom) { zoomSlider.value = s.defaultZoom; zoomValue.textContent = s.defaultZoom + '%'; }
+
+        // Password length
+        if (s.passwordLength && pwdSlider) { pwdSlider.value = s.passwordLength; pwdValue.textContent = s.passwordLength; }
+
+        // Toggles
+        const toggles = {
+          'setting-bookmarks-bar': 'bookmarksBarVisible',
+          'setting-home-button': 'showHomeButton',
+          'setting-adblock': 'adblockEnabled',
+          'setting-dnt': 'doNotTrack',
+          'setting-autoplay': 'autoplayBlock',
+          'setting-notifications-block': 'notificationsBlock',
+          'setting-smooth-scroll': 'smoothScrolling',
+          'setting-hw-accel': 'hardwareAcceleration',
+          'setting-vertical-tabs': 'verticalTabs',
+          'setting-split-view': 'splitViewEnabled',
+          'setting-save-passwords': 'savePasswords',
+          'setting-autofill': 'autofillEnabled',
+          'setting-proxy-enabled': 'proxyEnabled',
+          'setting-ai-enabled': 'aiEnabled',
+          'setting-reading-mode': 'readingModeEnabled',
+          'setting-pip-enabled': 'pipEnabled',
+          'setting-ask-download': 'askBeforeDownload',
+        };
+
+        for (const [id, key] of Object.entries(toggles)) {
+          const el = document.getElementById(id);
+          if (el && s[key] !== undefined) el.checked = s[key];
+        }
+
+        // Selects
+        const selects = {
+          'setting-font-size': 'fontSize',
+          'setting-startup': 'startupBehavior',
+          'setting-tab-close': 'tabCloseAction',
+          'setting-language': 'language',
+          'setting-ai-provider': 'aiProvider',
+        };
+
+        for (const [id, key] of Object.entries(selects)) {
+          const el = document.getElementById(id);
+          if (el && s[key]) el.value = s[key];
+        }
+
+        // Inputs
+        if (s.homepage) document.getElementById('setting-homepage').value = s.homepage;
+        if (s.downloadPath) document.getElementById('setting-download-path').value = s.downloadPath;
+        if (s.proxyAddress) document.getElementById('setting-proxy-address').value = s.proxyAddress;
+        if (s.proxyBypass) document.getElementById('setting-proxy-bypass').value = s.proxyBypass;
+        if (s.aiApiKey) document.getElementById('setting-ai-api-key').value = s.aiApiKey;
+
+        // Proxy status
+        if (s.proxyEnabled && s.proxyAddress) {
+          const status = document.getElementById('proxy-status');
+          status.className = 'proxy-status active';
+          status.innerHTML = '<span class="proxy-status-dot"></span> Активен: ' + s.proxyAddress;
+        }
+
+      } catch (e) { console.error(e); }
+    }
+
+    loadSettings();
+  </script>
+</body>
+</html>

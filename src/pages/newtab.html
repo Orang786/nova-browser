@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Новая вкладка</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #e6e6e6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.06;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .bg-circle:nth-child(1) {
+      width: 400px; height: 400px;
+      background: #7c3aed;
+      top: -100px; left: -100px;
+      animation-delay: 0s;
+    }
+
+    .bg-circle:nth-child(2) {
+      width: 300px; height: 300px;
+      background: #3b82f6;
+      bottom: -50px; right: -50px;
+      animation-delay: -5s;
+    }
+
+    .bg-circle:nth-child(3) {
+      width: 200px; height: 200px;
+      background: #10b981;
+      top: 50%; left: 50%;
+      animation-delay: -10s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(50px, -50px) scale(1.1); }
+      50% { transform: translate(-30px, 30px) scale(0.9); }
+      75% { transform: translate(30px, 50px) scale(1.05); }
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      width: 90%;
+      max-width: 700px;
+    }
+
+    /* Logo */
+    .logo {
+      margin-bottom: 40px;
+    }
+
+    .logo svg {
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.4));
+    }
+
+    .logo-text {
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Search box */
+    .search-container {
+      position: relative;
+      margin-bottom: 50px;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 0 56px 0 24px;
+      color: #e6e6e6;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    .search-input:focus {
+      border-color: #7c3aed;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15), 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .search-btn {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .search-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+    }
+
+    /* Quick links */
+    .quick-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .quick-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .quick-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .quick-link-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .quick-link-title {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90px;
+    }
+
+    /* Time */
+    .clock {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    .clock-time {
+      font-size: 48px;
+      font-weight: 200;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .clock-date {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.3);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animation">
+    <div class="bg-circle"></div>
+    <div class="bg-circle"></div>
+    <div class="bg-circle"></div>
+  </div>
+
+  <div class="content">
+    <div class="logo">
+      <svg viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="36" stroke="url(#grad)" stroke-width="3"/>
+        <path d="M25 40l10 10 20-22" stroke="url(#grad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="80" y2="80">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="50%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#10b981"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="logo-text">Nova Browser</div>
+    </div>
+
+    <div class="search-container">
+      <input type="text" class="search-input" id="search-input" placeholder="Поиск в Google или введите URL..." autofocus>
+      <button class="search-btn" id="search-btn">
+        <svg width="20" height="20" viewBox="0 0 20 20">
+          <circle cx="8" cy="8" r="6" stroke="white" stroke-width="2" fill="none"/>
+          <path d="M13 13l5 5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="quick-links">
+      <a class="quick-link" href="https://youtube.com">
+        <div class="quick-link-icon">🎬</div>
+        <span class="quick-link-title">YouTube</span>
+      </a>
+      <a class="quick-link" href="https://github.com">
+        <div class="quick-link-icon">💻</div>
+        <span class="quick-link-title">GitHub</span>
+      </a>
+      <a class="quick-link" href="https://google.com">
+        <div class="quick-link-icon">🔍</div>
+        <span class="quick-link-title">Google</span>
+      </a>
+      <a class="quick-link" href="https://twitter.com">
+        <div class="quick-link-icon">🐦</div>
+        <span class="quick-link-title">Twitter</span>
+      </a>
+      <a class="quick-link" href="https://reddit.com">
+        <div class="quick-link-icon">📱</div>
+        <span class="quick-link-title">Reddit</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="clock">
+    <div class="clock-time" id="clock-time"></div>
+    <div class="clock-date" id="clock-date"></div>
+  </div>
+
+  <script>
+    // Часы
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-time').textContent =
+        now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('clock-date').textContent =
+        now.toLocaleDateString('ru-RU', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Поиск
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const query = e.target.value.trim();
+        if (query) {
+          // Определяем — URL или поиск
+          if (query.match(/^https?:\/\//) || query.match(/^[\w-]+(\.[\w-]+)+/)) {
+            window.location.href = query.startsWith('http') ? query : 'https://' + query;
+          } else {
+            window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+          }
+        }
+      }
+    });
+
+    document.getElementById('search-btn').addEventListener('click', () => {
+      const query = document.getElementById('search-input').value.trim();
+      if (query) {
+        window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      }
+    });
+  </script>
+</body>
+</html>
