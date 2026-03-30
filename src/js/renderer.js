@@ -13,6 +13,7 @@ let aiChat;
 let readingMode;
 let splitView;
 let extensionsUI;
+let miniPlayer;
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Инициализация менеджеров
@@ -29,7 +30,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Автообновление
   updaterUI = new UpdaterUI();
+
   extensionsUI = new ExtensionsUI(tabManager);
+  miniPlayer = new MiniPlayer(tabManager);
 
   // Первая вкладка
   await tabManager.init();

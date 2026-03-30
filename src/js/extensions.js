@@ -141,20 +141,23 @@ class ExtensionsUI {
         
         <div style="margin-top:8px;">
           <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Популярные расширения:</p>
-          <div class="ext-popular-list">
-            <button class="ext-popular-item" data-id="cjpalhdlnbpafiamejdnhcphjbkeiagm">
-              🛡️ uBlock Origin
-            </button>
-            <button class="ext-popular-item" data-id="nngceckbapebfimnlniiiahkandclblb">
-              🌙 Dark Reader
-            </button>
-            <button class="ext-popular-item" data-id="gcbommkclmhbkzddftdipkbkiafnkahh">
-              🔑 Bitwarden
-            </button>
-            <button class="ext-popular-item" data-id="bgnkhhnnamicmpeenaelnjfhikgbkllg">
-              🔤 AdGuard
-            </button>
-          </div>
+            <div class="ext-popular-list">
+              <button class="ext-popular-item" data-id="eimadpbcbfnmbkopoojfekhnkhdbieeh">
+                🌙 Dark Reader (V2)
+              </button>
+              <button class="ext-popular-item" data-id="clngdbkpkpeebahjckkjfobafhncgmne">
+                🎨 Stylus (V2)
+              </button>
+              <button class="ext-popular-item" data-id="dbepggeogbaibhgnhhndojpepiihcmeb">
+                ⌨️ Vimium (V2)
+              </button>
+              <button class="ext-popular-item" data-id="gbmdgpbipfallnflgajpaliibnhdgobh">
+                📋 JSON Viewer (V2)
+              </button>
+            </div>
+            <p style="font-size:10px; color:var(--text-muted); margin-top:8px;">
+              ⚠️ Manifest V3 расширения могут работать с ограничениями
+            </p>
         </div>
 
         <div style="display:flex; gap:8px; margin-top:12px;">
@@ -197,7 +200,10 @@ class ExtensionsUI {
       const result = await window.electronAPI.extensionsInstallFromStore(extId);
 
       if (result.success) {
-        Utils.showNotification(`🧩 ${result.extension.name} установлено!`, 3000, 'success');
+        Utils.showNotification(
+          `🧩 ${result.extension.name} установлено! ${result.extension.manifest_version === 3 ? '⚠️ Manifest V3 — может работать с ограничениями' : ''}`,
+          4000, 'success'
+        );
         dialog.remove();
         this.showInSidebar();
       } else {

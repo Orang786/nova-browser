@@ -685,7 +685,7 @@ class ExtensionManager {
     return this.store.get('items', []);
   }
 
-  // Загрузить расширение из папки
+    // Загрузить расширение из папки
   async loadFromFolder(extensionPath) {
     try {
       const manifestPath = path.join(extensionPath, 'manifest.json');
@@ -694,35 +694,49 @@ class ExtensionManager {
         return { success: false, error: 'manifest.json не найден в папке' };
       }
 
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      let manifest;
+      try {
+        manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      } catch(e) {
+        return { success: false, error: 'Ошибка чтения manifest.json: ' + e.message };
+      }
 
-      // Загружаем расширение в Electron
-      const ext = await session.defaultSession.loadExtension(extensionPath, {
-        allowFileAccess: true
-      });
+      // Проверяем manifest_version
+      if (manifest.manifest_version === 3) {
+        console.warn('⚠️ Manifest V3 — может работать с ограничениями');
+      }
+
+      let ext;
+      if (session.defaultSession.extensions && session.defaultSession.extensions.loadExtension) {
+        ext = await session.defaultSession.extensions.loadExtension(extensionPath, {
+          allowFileAccess: true
+        });
+      } else {
+        ext = await session.defaultSession.loadExtension(extensionPath, {
+          allowFileAccess: true
+        });
+      }
 
       // Сохраняем информацию
       const extInfo = {
         id: ext.id,
-        name: manifest.name || 'Unknown',
+        name: manifest.name || 'Unknown Extension',
         version: manifest.version || '1.0',
         description: manifest.description || '',
         path: extensionPath,
         enabled: true,
         installedAt: new Date().toISOString(),
         manifest_version: manifest.manifest_version || 2,
-        icons: manifest.icons || {},
-        type: 'unpacked'
+        type: extensionPath.includes('crx_') ? 'crx' : 'unpacked'
       };
 
       const extensions = this.store.get('items', []);
-      // Удалить старую версию если есть
       const filtered = extensions.filter(e => e.id !== ext.id);
       filtered.push(extInfo);
       this.store.set('items', filtered);
       this.loadedExtensions.push(ext);
 
-      console.log('✅ Расширение загружено:', manifest.name);
+      console.log('✅ Расширение загружено:', manifest.name, 'v' + manifest.version);
       return { success: true, extension: extInfo };
 
     } catch (e) {
@@ -734,49 +748,211 @@ class ExtensionManager {
   // Загрузить .crx файл
   async loadFromCRX(crxPath) {
     try {
-      const AdmZip = require('adm-zip') || null;
+      const extDir = path.join(app.getPath('userData'), 'extensions', 'crx_' + Date.now());
+      fs.mkdirSync(extDir, { recursive: true });
 
-      // CRX по сути ZIP с заголовком
-      // Распаковываем во временную папку
-      const extDir = path.join(app.getPath('userData'), 'extensions', 
-        'crx_' + Date.now());
-
-      if (!fs.existsSync(extDir)) {
-        fs.mkdirSync(extDir, { recursive: true });
-      }
-
-      // Читаем CRX
       const crxBuffer = fs.readFileSync(crxPath);
+      console.log('[Extension] CRX size:', crxBuffer.length);
 
-      // CRX формат: magic(4) + version(4) + header_length + header + ZIP
-      // Находим начало ZIP (PK signature)
+      // Парсим CRX заголовок и получаем ZIP
+      const magic = crxBuffer.toString('ascii', 0, 4);
       let zipStart = 0;
-      for (let i = 0; i < Math.min(crxBuffer.length, 1000); i++) {
-        if (crxBuffer[i] === 0x50 && crxBuffer[i + 1] === 0x4B &&
-            crxBuffer[i + 2] === 0x03 && crxBuffer[i + 3] === 0x04) {
-          zipStart = i;
-          break;
+
+      if (magic === 'Cr24') {
+        const version = crxBuffer.readUInt32LE(4);
+        console.log('[Extension] CRX version:', version);
+
+        if (version === 3) {
+          const headerSize = crxBuffer.readUInt32LE(8);
+          zipStart = 12 + headerSize;
+        } else if (version === 2) {
+          const pubKeyLen = crxBuffer.readUInt32LE(8);
+          const sigLen = crxBuffer.readUInt32LE(12);
+          zipStart = 16 + pubKeyLen + sigLen;
+        }
+      } else {
+        for (let i = 0; i < Math.min(crxBuffer.length, 50000); i++) {
+          if (crxBuffer[i] === 0x50 && crxBuffer[i + 1] === 0x4B &&
+              crxBuffer[i + 2] === 0x03 && crxBuffer[i + 3] === 0x04) {
+            zipStart = i;
+            break;
+          }
         }
       }
 
       const zipBuffer = crxBuffer.slice(zipStart);
+      console.log('[Extension] ZIP start:', zipStart, 'size:', zipBuffer.length);
 
-      // Распаковываем
-      const zipPath = path.join(extDir, 'extension.zip');
-      fs.writeFileSync(zipPath, zipBuffer);
+      // Проверяем PK signature
+      if (zipBuffer[0] !== 0x50 || zipBuffer[1] !== 0x4B) {
+        return { success: false, error: 'ZIP signature не найден' };
+      }
 
-      // Используем встроенную распаковку
-      await this.unzip(zipPath, extDir);
+      // Распаковываем через zlib (чистый Node.js, без внешних зависимостей)
+      await this.unzipBuffer(zipBuffer, extDir);
 
-      // Удаляем zip
-      fs.unlinkSync(zipPath);
+      const files = fs.readdirSync(extDir);
+      console.log('[Extension] Extracted:', files.slice(0, 15));
 
-      // Загружаем как папку
-      return await this.loadFromFolder(extDir);
+      if (files.length === 0) {
+        return { success: false, error: 'Не удалось распаковать файлы' };
+      }
+
+      let manifestDir = this.findManifest(extDir);
+      if (!manifestDir) {
+        return { success: false, error: 'manifest.json не найден' };
+      }
+
+      return await this.loadFromFolder(manifestDir);
 
     } catch (e) {
-      return { success: false, error: 'Ошибка CRX: ' + e.message };
+      console.error('[Extension] Error:', e);
+      return { success: false, error: e.message };
     }
+  }
+
+  // Распаковка ZIP из буфера — чистый Node.js
+  unzipBuffer(zipBuffer, destDir) {
+    return new Promise((resolve, reject) => {
+      const zlib = require('zlib');
+      let offset = 0;
+
+      const readUInt16 = (buf, pos) => buf[pos] | (buf[pos + 1] << 8);
+      const readUInt32 = (buf, pos) => buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16) | ((buf[pos + 3] << 24) >>> 0);
+
+      let fileCount = 0;
+      let errorCount = 0;
+
+      try {
+        while (offset < zipBuffer.length - 4) {
+          // Проверяем сигнатуру Local File Header (PK\x03\x04)
+          const sig = readUInt32(zipBuffer, offset);
+
+          if (sig !== 0x04034b50) {
+            // Не Local File Header — конец файлов
+            break;
+          }
+
+          const compressionMethod = readUInt16(zipBuffer, offset + 8);
+          const compressedSize = readUInt32(zipBuffer, offset + 18);
+          const uncompressedSize = readUInt32(zipBuffer, offset + 22);
+          const fileNameLen = readUInt16(zipBuffer, offset + 26);
+          const extraFieldLen = readUInt16(zipBuffer, offset + 28);
+
+          const fileName = zipBuffer.toString('utf8', offset + 30, offset + 30 + fileNameLen);
+          const dataOffset = offset + 30 + fileNameLen + extraFieldLen;
+
+          // Определяем размер данных
+          let dataSize = compressedSize;
+
+          // Если размер 0 и есть Data Descriptor
+          if (dataSize === 0 && uncompressedSize === 0) {
+            // Ищем следующий PK header или Data Descriptor
+            let searchPos = dataOffset;
+            while (searchPos < zipBuffer.length - 4) {
+              const nextSig = readUInt32(zipBuffer, searchPos);
+              if (nextSig === 0x04034b50 || nextSig === 0x02014b50 || nextSig === 0x08074b50) {
+                dataSize = searchPos - dataOffset;
+                if (nextSig === 0x08074b50) {
+                  // Skip data descriptor for next iteration
+                }
+                break;
+              }
+              searchPos++;
+            }
+            if (dataSize === 0) {
+              dataSize = zipBuffer.length - dataOffset;
+            }
+          }
+
+          const fullPath = path.join(destDir, fileName);
+
+          if (fileName.endsWith('/')) {
+            // Папка
+            if (!fs.existsSync(fullPath)) {
+              fs.mkdirSync(fullPath, { recursive: true });
+            }
+          } else {
+            // Файл
+            const dir = path.dirname(fullPath);
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true });
+            }
+
+            try {
+              const compressedData = zipBuffer.slice(dataOffset, dataOffset + dataSize);
+
+              if (compressionMethod === 0) {
+                // Stored (без сжатия)
+                fs.writeFileSync(fullPath, compressedData);
+              } else if (compressionMethod === 8) {
+                // Deflate
+                const decompressed = zlib.inflateRawSync(compressedData);
+                fs.writeFileSync(fullPath, decompressed);
+              } else {
+                console.warn('[Extension] Unknown compression:', compressionMethod, fileName);
+                errorCount++;
+              }
+
+              fileCount++;
+            } catch (e) {
+              // Пробуем записать как есть
+              try {
+                const rawData = zipBuffer.slice(dataOffset, dataOffset + dataSize);
+                fs.writeFileSync(fullPath, rawData);
+                fileCount++;
+              } catch(e2) {
+                errorCount++;
+              }
+            }
+          }
+
+          offset = dataOffset + dataSize;
+
+          // Пропускаем Data Descriptor если есть
+          if (offset < zipBuffer.length - 4) {
+            const nextSig = readUInt32(zipBuffer, offset);
+            if (nextSig === 0x08074b50) {
+              offset += 16; // Data descriptor: sig(4) + crc(4) + compSize(4) + uncompSize(4)
+            }
+          }
+        }
+
+        console.log('[Extension] Extracted', fileCount, 'files,', errorCount, 'errors');
+
+        if (fileCount > 0) {
+          resolve();
+        } else {
+          reject(new Error('Не удалось извлечь ни одного файла'));
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  // Рекурсивный поиск manifest.json
+  findManifest(dir, depth = 0) {
+    if (depth > 5) return null;
+
+    if (fs.existsSync(path.join(dir, 'manifest.json'))) {
+      return dir;
+    }
+
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const itemPath = path.join(dir, item);
+        try {
+          if (fs.statSync(itemPath).isDirectory()) {
+            const result = this.findManifest(itemPath, depth + 1);
+            if (result) return result;
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
+
+    return null;
   }
 
   // Простая распаковка ZIP
@@ -795,27 +971,45 @@ class ExtensionManager {
   }
 
   // Скачать расширение из Chrome Web Store
-  async downloadFromStore(extensionId) {
+  downloadFromStore(extensionId) {
     return new Promise((resolve, reject) => {
-      const downloadUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0.0.0&acceptformat=crx2,crx3&x=id%3D${extensionId}%26uc`;
+      const downloadUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0.6099.130&acceptformat=crx2,crx3&x=id%3D${extensionId}%26uc`;
 
-      const savePath = path.join(app.getPath('userData'), 'extensions', 
-        `${extensionId}.crx`);
+      const savePath = path.join(app.getPath('userData'), 'extensions', `${extensionId}.crx`);
       const saveDir = path.dirname(savePath);
 
       if (!fs.existsSync(saveDir)) {
         fs.mkdirSync(saveDir, { recursive: true });
       }
 
-      const file = fs.createWriteStream(savePath);
+      let redirectCount = 0;
 
       const download = (url) => {
-        const client = url.startsWith('https') ? https : http;
-        client.get(url, (res) => {
-          // Редирект
-          if (res.statusCode === 301 || res.statusCode === 302) {
-            download(res.headers.location);
-            return;
+        redirectCount++;
+        if (redirectCount > 10) {
+          reject(new Error('Слишком много редиректов'));
+          return;
+        }
+
+        const urlObj = new URL(url);
+        const client = urlObj.protocol === 'https:' ? https : http;
+
+        const options = {
+          hostname: urlObj.hostname,
+          path: urlObj.pathname + urlObj.search,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*'
+          }
+        };
+
+        client.get(options, (res) => {
+          if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307) {
+            if (res.headers.location) {
+              console.log('[Extension] Redirect to:', res.headers.location.substring(0, 80));
+              download(res.headers.location);
+              return;
+            }
           }
 
           if (res.statusCode !== 200) {
@@ -823,31 +1017,41 @@ class ExtensionManager {
             return;
           }
 
+          // Собираем ВСЕ данные в буфер
+          const chunks = [];
+          let totalReceived = 0;
           const totalBytes = parseInt(res.headers['content-length'], 10) || 0;
-          let receivedBytes = 0;
 
           res.on('data', (chunk) => {
-            receivedBytes += chunk.length;
-            file.write(chunk);
+            chunks.push(chunk);
+            totalReceived += chunk.length;
 
             if (totalBytes > 0 && mainWindow) {
               mainWindow.webContents.send('extension-download-progress', {
-                percent: (receivedBytes / totalBytes) * 100,
-                received: receivedBytes,
-                total: totalBytes
+                percent: (totalReceived / totalBytes) * 100
               });
             }
           });
 
           res.on('end', () => {
-            file.end();
+            // Записываем весь буфер одним разом
+            const fullBuffer = Buffer.concat(chunks);
+            fs.writeFileSync(savePath, fullBuffer);
+
+            console.log('[Extension] Downloaded:', fullBuffer.length, 'bytes');
+
+            if (fullBuffer.length < 1000) {
+              try { fs.unlinkSync(savePath); } catch(e) {}
+              reject(new Error('Файл слишком маленький. Проверьте ID расширения.'));
+              return;
+            }
+
             resolve(savePath);
           });
 
-        }).on('error', (e) => {
-          file.close();
-          reject(e);
-        });
+          res.on('error', (e) => reject(e));
+
+        }).on('error', (e) => reject(e));
       };
 
       download(downloadUrl);
@@ -901,9 +1105,17 @@ class ExtensionManager {
     if (!ext) return { success: false };
 
     if (enabled) {
-      await session.defaultSession.loadExtension(ext.path, { allowFileAccess: true });
+      if (session.defaultSession.extensions && session.defaultSession.extensions.loadExtension) {
+        await session.defaultSession.extensions.loadExtension(ext.path, { allowFileAccess: true });
+      } else {
+        await session.defaultSession.loadExtension(ext.path, { allowFileAccess: true });
+      }
     } else {
-      await session.defaultSession.removeExtension(extensionId);
+      if (session.defaultSession.extensions && session.defaultSession.extensions.removeExtension) {
+        await session.defaultSession.extensions.removeExtension(extensionId);
+      } else {
+        await session.defaultSession.removeExtension(extensionId);
+      }
     }
 
     ext.enabled = enabled;
@@ -919,9 +1131,11 @@ class ExtensionManager {
     for (const ext of extensions) {
       if (ext.enabled && ext.path && fs.existsSync(ext.path)) {
         try {
-          await session.defaultSession.loadExtension(ext.path, {
-            allowFileAccess: true
-          });
+          if (session.defaultSession.extensions && session.defaultSession.extensions.loadExtension) {
+            await session.defaultSession.extensions.loadExtension(ext.path, { allowFileAccess: true });
+          } else {
+            await session.defaultSession.loadExtension(ext.path, { allowFileAccess: true });
+          }
           loaded++;
         } catch (e) {
           console.warn(`⚠️ Не удалось загрузить ${ext.name}:`, e.message);
