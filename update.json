@@ -1,7 +1,7 @@
 {
   "version": "1.3.0",
   "releaseDate": "2025-03-30",
-  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.1.2/Nova-Browser-Setup-1.3.0.exe",
+  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.3.0/Nova-Browser-Setup-1.3.0.exe",
   "releaseNotes": "pin tabs, suggestions, qr, translate, focus mode, notes, sessions",
   "changelog": [
     "Mini player like Yandex Browser",
