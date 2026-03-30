@@ -37,7 +37,7 @@
       {
         "provider": "github",
         "owner": "Orang786",
-        "repo": "nova-browser2",
+        "repo": "nova-browser",
         "releaseType": "release"
       }
     ],
