@@ -1,11 +1,11 @@
 {
-  "version": "1.1.0",
-  "releaseDate": "2024-03-29",
-  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.1.1/Nova-Browser-Setup-1.1.1.exe",
-  "releaseNotes": "Добавлены расширения, исправлены ошибки",
+  "version": "1.1.2",
+  "releaseDate": "2025-03-30",
+  "downloadUrl": "https://github.com/Orang786/nova-browser/releases/download/v1.1.2/Nova-Browser-Setup-1.1.1.exe",
+  "releaseNotes": "Mini player, extensions, bug fixes",
   "changelog": [
-    "Система расширений",
-    "Загрузка из Chrome Web Store",
-    "Исправлены ошибки"
+    "Mini player like Yandex Browser",
+    "Chrome extensions support",
+    "Bug fixes"
   ]
 }
