@@ -135,6 +135,48 @@ class TabManager {
       });
     });
 
+        // ===== TAB PREVIEW =====
+    let previewTimeout;
+    let previewEl;
+
+    tabEl.addEventListener('mouseenter', () => {
+      if (tab.id === this.activeTabId) return;
+
+      previewTimeout = setTimeout(async () => {
+        const wv = document.querySelector(`webview[data-tab-id="${tab.id}"]`);
+        let imgSrc = '';
+
+        if (wv) {
+          try {
+            const image = await wv.capturePage();
+            imgSrc = image.toDataURL();
+          } catch(e) {}
+        }
+
+        previewEl = document.createElement('div');
+        previewEl.className = 'tab-preview';
+        previewEl.innerHTML = `
+          <div class="tab-preview-image">
+            ${imgSrc ? `<img src="${imgSrc}">` : '<span style="color:var(--text-muted)">📄</span>'}
+          </div>
+          <div class="tab-preview-info">
+            <div class="tab-preview-title">${this.escapeHtml(tab.title || 'Новая вкладка')}</div>
+            <div class="tab-preview-url">${tab.url || ''}</div>
+          </div>
+        `;
+        tabEl.style.position = 'relative';
+        tabEl.appendChild(previewEl);
+      }, 600);
+    });
+
+    tabEl.addEventListener('mouseleave', () => {
+      clearTimeout(previewTimeout);
+      if (previewEl) {
+        previewEl.remove();
+        previewEl = null;
+      }
+    });
+
     this.tabsContainer.appendChild(tabEl);
   }
 
@@ -544,5 +586,58 @@ class TabManager {
       const indicator = tabEl.querySelector('.tab-group-indicator');
       if (indicator) indicator.remove();
     }
+  }
+
+    // Закрепить/открепить вкладку
+  pinTab(tabId) {
+    const tab = this.tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    tab.pinned = !tab.pinned;
+
+    const tabEl = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+    if (tabEl) {
+      tabEl.classList.toggle('pinned', tab.pinned);
+
+      // Переместить закреплённые в начало
+      if (tab.pinned) {
+        const firstUnpinned = this.tabsContainer.querySelector('.tab:not(.pinned)');
+        if (firstUnpinned) {
+          this.tabsContainer.insertBefore(tabEl, firstUnpinned);
+        }
+      }
+    }
+
+    // Пересортировать массив
+    this.tabs.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0;
+    });
+  }
+
+  // Мут вкладки
+  muteTab(tabId) {
+    const tab = this.tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    tab.muted = !tab.muted;
+    const wv = document.querySelector(`webview[data-tab-id="${tabId}"]`);
+    if (wv) {
+      wv.setAudioMuted(tab.muted);
+    }
+
+    const audioIcon = document.querySelector(`.tab[data-tab-id="${tabId}"] .tab-audio`);
+    if (audioIcon) {
+      audioIcon.textContent = tab.muted ? '🔇' : '🔊';
+      audioIcon.title = tab.muted ? 'Включить звук' : 'Выключить звук';
+    }
+  }
+
+  // Копировать все URL
+  copyAllUrls() {
+    const urls = this.tabs.map(t => t.url).filter(u => u && !u.startsWith('file://')).join('\n');
+    navigator.clipboard.writeText(urls);
+    Utils.showNotification(`📋 Скопировано ${this.tabs.length} ссылок`, 2000, 'success');
   }
 }

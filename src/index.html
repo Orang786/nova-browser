@@ -46,6 +46,15 @@
     <div class="ctx-item" data-action="ctx-incognito">
       <span class="ctx-icon">🕶️</span> Открыть в инкогнито
     </div>
+        <div class="ctx-item" data-action="ctx-pin">
+      <span class="ctx-icon">📌</span> Закрепить вкладку
+    </div>
+    <div class="ctx-item" data-action="ctx-mute">
+      <span class="ctx-icon">🔇</span> Мут вкладки
+    </div>
+    <div class="ctx-item" data-action="ctx-qr">
+      <span class="ctx-icon">📱</span> QR-код
+    </div>
   </div>
 
   <!-- ======== TITLE BAR (кастомная) ======== -->
@@ -115,6 +124,8 @@
         </svg>
       </button>
     </div>
+
+    <div id="url-suggestions"></div>
 
     <div id="url-bar-container">
       <div id="security-indicator" class="security-unknown" title="Информация о безопасности">
@@ -307,6 +318,30 @@
       <span class="menu-icon">🧩</span>
       <span>Расширения</span>
     </div>
+        <div class="menu-item" data-action="qr-code">
+      <span class="menu-icon">📱</span>
+      <span>QR-код страницы</span>
+    </div>
+    <div class="menu-item" data-action="translate">
+      <span class="menu-icon">🌐</span>
+      <span>Перевести страницу</span>
+    </div>
+    <div class="menu-item" data-action="focus-mode">
+      <span class="menu-icon">🎯</span>
+      <span>Focus Mode</span>
+    </div>
+    <div class="menu-item" data-action="notes">
+      <span class="menu-icon">📝</span>
+      <span>Заметки</span>
+    </div>
+    <div class="menu-item" data-action="sessions">
+      <span class="menu-icon">📑</span>
+      <span>Сессии</span>
+    </div>
+    <div class="menu-item" data-action="copy-all-urls">
+      <span class="menu-icon">📋</span>
+      <span>Копировать все URL</span>
+    </div>
   </div>
 
   <!-- ======== DOWNLOADS PANEL ======== -->
@@ -402,7 +437,7 @@
     <div id="mini-player-resize"></div>
   </div>
 
-    <script src="js/utils.js"></script>
+  <script src="js/utils.js"></script>
   <script src="js/tabs.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/bookmarks.js"></script>
@@ -413,9 +448,12 @@
   <script src="js/aichat.js"></script>
   <script src="js/readingmode.js"></script>
   <script src="js/splitview.js"></script>
-  <script src="js/updater.js"></script>     <!-- ДОБАВЬ -->
-  <script src="js/extensions.js"></script>     <!-- ДОБАВЬ -->
+  <script src="js/updater.js"></script>
+  <script src="js/extensions.js"></script>
   <script src="js/miniplayer.js"></script>
+  <script src="js/focusmode.js"></script>
+  <script src="js/notes.js"></script>
+  <script src="js/sessions.js"></script>
   <script src="js/renderer.js"></script>
 </body>
 </html>

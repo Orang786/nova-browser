@@ -2,21 +2,11 @@
 // ГЛАВНЫЙ РЕНДЕР — ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
-let tabManager;
-let navigation;
-let bookmarksManager;
-let historyManager;
-let downloadsManager;
-let settingsManager;
-let passwordsUI;
-let aiChat;
-let readingMode;
-let splitView;
-let extensionsUI;
-let miniPlayer;
+let tabManager, navigation, bookmarksManager, historyManager, downloadsManager;
+let settingsManager, passwordsUI, aiChat, readingMode, splitView;
+let updaterUI, extensionsUI, miniPlayer, focusMode, siteNotes, sessionManager;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Инициализация менеджеров
   tabManager = new TabManager();
   navigation = new Navigation(tabManager);
   bookmarksManager = new BookmarksManager(tabManager);
@@ -27,19 +17,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   aiChat = new AIChatPanel(tabManager);
   readingMode = new ReadingMode(tabManager);
   splitView = new SplitView(tabManager);
-
-  // Автообновление
   updaterUI = new UpdaterUI();
-
   extensionsUI = new ExtensionsUI(tabManager);
   miniPlayer = new MiniPlayer(tabManager);
+  focusMode = new FocusMode(tabManager);
+  siteNotes = new SiteNotes(tabManager);
+  sessionManager = new SessionManager(tabManager);
 
-  // Первая вкладка
   await tabManager.init();
   await settingsManager.init();
   await bookmarksManager.updateBookmarksBar();
 
-  // Настроить UI
   setupWindowControls();
   setupMenu();
   setupSidebar();
@@ -52,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupCommandPalette();
   setupVerticalTabs();
 
-  console.log('🚀 Nova Browser v1.0.0 initialized with all features!');
+  console.log('🚀 Nova Browser v1.3.0 loaded!');
 });
 
 // ============================================
@@ -188,6 +176,24 @@ function setupMenu() {
           break;
         case 'extensions':
           extensionsUI.showInSidebar();
+          break;
+                case 'qr-code':
+          showQRCode();
+          break;
+        case 'translate':
+          translatePage();
+          break;
+        case 'focus-mode':
+          focusMode.toggle();
+          break;
+        case 'notes':
+          siteNotes.showInSidebar();
+          break;
+        case 'sessions':
+          sessionManager.showInSidebar();
+          break;
+        case 'copy-all-urls':
+          tabManager.copyAllUrls();
           break;
       }
     });
@@ -427,6 +433,15 @@ function setupContextMenu() {
         case 'ctx-incognito':
           window.electronAPI.openIncognito();
           break;
+        case 'ctx-pin':
+          tabManager.pinTab(tabManager.activeTabId);
+          break;
+        case 'ctx-mute':
+          tabManager.muteTab(tabManager.activeTabId);
+          break;
+        case 'ctx-qr':
+          showQRCode();
+          break;
       }
     });
   });
@@ -464,6 +479,14 @@ function setupCommandPalette() {
     { icon: '🗑️', title: 'Очистить историю', action: () => clearBrowsingData() },
     { icon: 'ℹ️', title: 'О браузере', action: () => Utils.showNotification('Nova Browser v1.0.0 🚀', 3000, 'info') },
     { icon: '🧩', title: 'Расширения', action: () => extensionsUI.showInSidebar() },
+    { icon: '📌', title: 'Закрепить вкладку', action: () => tabManager.pinTab(tabManager.activeTabId) },
+    { icon: '🔇', title: 'Мут вкладки', action: () => tabManager.muteTab(tabManager.activeTabId) },
+    { icon: '📋', title: 'Копировать все URL', action: () => tabManager.copyAllUrls() },
+    { icon: '📱', title: 'QR-код страницы', action: () => showQRCode() },
+    { icon: '🌐', title: 'Перевести страницу', action: () => translatePage() },
+    { icon: '🎯', title: 'Focus Mode', action: () => focusMode.toggle() },
+    { icon: '📝', title: 'Заметки к сайту', action: () => siteNotes.showInSidebar() },
+    { icon: '📑', title: 'Сессии', action: () => sessionManager.showInSidebar() },
   ];
 
   function show() {
@@ -686,4 +709,62 @@ function setupVerticalTabs() {
   window.electronAPI.settingsGet('verticalTabs', false).then(value => {
     if (value) toggleVerticalMode();
   });
+}
+
+// ============================================
+// QR КОД
+// ============================================
+
+function showQRCode() {
+  const tab = tabManager.tabs.find(t => t.id === tabManager.activeTabId);
+  if (!tab?.url || tab.url.startsWith('file://')) {
+    Utils.showNotification('QR-код недоступен для этой страницы', 2000, 'warning');
+    return;
+  }
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tab.url)}`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'qr-overlay';
+  overlay.style.cssText = `
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);
+    z-index:100000;display:flex;align-items:center;justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="background:var(--bg-secondary);border:1px solid var(--border-color);
+                border-radius:16px;padding:32px;text-align:center;box-shadow:0 16px 64px rgba(0,0,0,0.5);
+                animation:paletteOpen 0.15s ease;">
+      <h3 style="margin-bottom:16px;font-size:18px;">📱 QR-код страницы</h3>
+      <div style="background:white;padding:16px;border-radius:12px;display:inline-block;margin-bottom:16px;">
+        <img src="${qrUrl}" width="200" height="200" alt="QR Code">
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Отсканируйте камерой телефона</p>
+      <p style="font-size:11px;color:var(--text-muted);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${tab.url}</p>
+      <button onclick="this.closest('#qr-overlay').remove()" 
+              style="margin-top:16px;padding:8px 24px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">
+        Закрыть
+      </button>
+    </div>
+  `;
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.body.appendChild(overlay);
+}
+
+// ============================================
+// ПЕРЕВОДЧИК СТРАНИЦ
+// ============================================
+
+async function translatePage() {
+  const tab = tabManager.tabs.find(t => t.id === tabManager.activeTabId);
+  if (!tab?.url) return;
+
+  const translateUrl = `https://translate.google.com/translate?sl=auto&tl=ru&u=${encodeURIComponent(tab.url)}`;
+  tabManager.navigate(translateUrl);
+  Utils.showNotification('🌐 Страница переведена через Google Translate', 3000, 'success');
 }
